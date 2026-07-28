@@ -8,12 +8,13 @@
 
 // C++ standard headers
 #include <concepts>
+#include "xtd/concepts.h"
 
 // Catch2 headers
 #define CATCH_CONFIG_NO_POSIX_SIGNALS
 #include <catch.hpp>
 
-template <std::floating_point T>
+template <xtd::floating_point T>
 void compare(T result, T reference, int ulps = 0) {
   switch (std::fpclassify(reference)) {
     case FP_INFINITE:
@@ -23,7 +24,12 @@ void compare(T result, T reference, int ulps = 0) {
       CHECK(std::isnan(result));
       break;
     case FP_ZERO:
-      CHECK_THAT(std::abs(result), Catch::Matchers::WithinULP(static_cast<T>(0), ulps));
+      // Catch::Matchers::WithinULP does not handle properly the comparison of denormals with zero
+      if (result != static_cast<T>(0)) {
+        CHECK_THAT(result, Catch::Matchers::WithinAbs(reference, std::numeric_limits<T>::denorm_min() * ulps));
+      } else {
+        CHECK_THAT(std::abs(result), Catch::Matchers::WithinULP(static_cast<T>(0), ulps));
+      }
       break;
     case FP_SUBNORMAL:
       // Catch::Matchers::WithinULP does not handle properly the comparison of denormals with zero

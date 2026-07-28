@@ -25,6 +25,10 @@ TEST_CASE("xtd::min", "[min][sycl]") {
     DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
+          SECTION("float16 xtd::min(float16, float16)") {
+            validate<float16, float16, xtd::min, [](float16 a, float16 b) -> float16 { return float16(std::min(static_cast<float>(a), static_cast<float>(b))); }>(platform, device);
+          }
+
           SECTION("float xtd::min(float, float)") {
             validate<float, float, xtd::min, byval::min>(platform, device);
           }

@@ -145,10 +145,32 @@ public:
     }
 #endif
 
+    /* ========================================================================
+     * COMPARISON OPERATORS
+     * ===================================================================== */
+    XTD_DEVICE_FUNCTION constexpr std::partial_ordering operator<=>(const float16& rhs) const noexcept {
+        if (std::isnan(static_cast<float>(*this)) || std::isnan(static_cast<float>(rhs))) {
+            return std::partial_ordering::unordered;
+        }
+        return to_ordered_int(bits_) <=> to_ordered_int(rhs.bits_);
+    }
+
+    XTD_DEVICE_FUNCTION constexpr bool operator==(const float16& rhs) const noexcept {
+        if (std::isnan(static_cast<float>(*this)) || std::isnan(static_cast<float>(rhs))) {
+            return false;
+        }
+        return to_ordered_int(bits_) == to_ordered_int(rhs.bits_);
+    }
+
 private:
     // Needs initialization to be compatible with <C++20
     // uint16_t bits_{0};
     uint16_t bits_;
+
+    XTD_DEVICE_FUNCTION constexpr static std::int16_t to_ordered_int(std::uint16_t u) noexcept {
+        u = (u == 0x8000) ? 0 : u;  // Handling Signed Zero
+        return (u & 0x8000) ? static_cast<std::int16_t>(0x8000 - u) : static_cast<std::int16_t>(u);  // Converting Sign-Magnitude to Two's Complement
+    }
 
     /* Copyright <2020> <Feng Wang>
      * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:

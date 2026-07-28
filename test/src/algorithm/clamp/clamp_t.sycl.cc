@@ -25,6 +25,10 @@ TEST_CASE("xtd::clamp", "[clamp][sycl]") {
     DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
+        SECTION("float16 xtd::clamp(float16, float16)") {
+          validate_clamp<float16, float16, xtd::clamp, [](float16 x, float16 lo, float16 hi) -> float16 { return float16(std::clamp(static_cast<float>(x), static_cast<float>(lo), static_cast<float>(hi))); }>(platform, device);
+        }
+
           SECTION("float xtd::clamp(float, float)") {
             validate_clamp<float, float, xtd::clamp, byval::clamp>(platform, device);
           }

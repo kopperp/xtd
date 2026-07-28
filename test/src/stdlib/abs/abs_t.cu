@@ -23,6 +23,12 @@ TEST_CASE("xtd::abs", "[abs][cuda]") {
   DYNAMIC_SECTION("CUDA platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
+        SECTION("float16 xtd::abs(float16)") {
+          // NVCC suffers from internal template mangling errors on stateless lambdas
+          constexpr auto float16_abs = +[](float16 x) -> float16 { return float16(std::abs(static_cast<float>(x))); };
+          validate<float16, float16, xtd::abs, float16_abs>(device);
+        }
+
         SECTION("float xtd::abs(float)") {
           validate<float, float, xtd::abs, std::abs>(device);
         }

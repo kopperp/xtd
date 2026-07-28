@@ -12,6 +12,26 @@
 #include "xtd/internal/defines.h"
 
 namespace xtd {
+  /* Computes the absolute value of arg, in half precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 fabs(float16 arg) {
+#if defined(XTD_TARGET_CUDA)
+    // CUDA device code
+    return __habs(arg);
+#elif defined(XTD_TARGET_HIP)
+    // HIP/ROCm device code
+    return __habs(arg);
+#elif defined(XTD_TARGET_SYCL)
+    // SYCL device code
+    return sycl::fabs(arg);
+#elif XTD_HAS_STDFLOAT16
+    // standard C/C++ code
+    return ::fabsf(arg);
+#else
+    // standard C/C++ code
+    return float16(::fabs(static_cast<float_t>(arg)));
+#endif
+  }
 
   /* Computes the absolute value of arg, in single precision.
    */

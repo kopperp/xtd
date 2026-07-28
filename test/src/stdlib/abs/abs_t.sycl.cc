@@ -24,6 +24,10 @@ TEST_CASE("xtd::abs", "[abs][sycl]") {
     DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
+          SECTION("float16 xtd::abs(float16)") {
+            validate<float16, float16, xtd::abs, [](float16 x) { return float16(std::abs(static_cast<float>(x))); }>(platform, device);
+          }
+
           SECTION("float xtd::abs(float)") {
             validate<float, float, xtd::abs, std::abs>(platform, device);
           }

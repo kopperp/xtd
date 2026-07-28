@@ -36,6 +36,7 @@ COMMON_FLAGS := -std=c++20 -O2 -g
 # Catch2 needs -Wno-unused-variable
 # mpfr::real needs -Wno-unused-parameter -Wno-self-assign-overloaded
 HOST_CXXFLAGS := -march=native -Wall -Wextra -Werror -Wno-unused-variable -Wno-unused-parameter -Wno-self-assign-overloaded -fPIC
+# HOST_CXXFLAGS := -Wall -Wextra -Werror -Wno-unused-variable -Wno-unused-parameter -Wno-self-assign-overloaded -fPIC
 
 # Compiler flags supported by GCC but not by the LLVM-based compilers (clang, hipcc, icpx, etc.)
 LLVM_UNSUPPORTED_CXXFLAGS := --param vect-max-version-for-alias-checks=50 -Werror=format-contains-nul -Wno-non-template-friend -Werror=return-local-addr -Werror=unused-but-set-variable
@@ -44,6 +45,8 @@ LLVM_UNSUPPORTED_CXXFLAGS := --param vect-max-version-for-alias-checks=50 -Werro
 CXX           := g++
 GCC_TOOLCHAIN := $(abspath $(dir $(shell which $(CXX)))/..)
 GCC_TARGET    := $(shell $(CXX) -dumpmachine)
+# CXXFLAGS      := $(COMMON_FLAGS) $(HOST_CXXFLAGS) -fsanitize=address
+# LDFLAGS       := $(COMMON_FLAGS) -fsanitize=address
 CXXFLAGS      := $(COMMON_FLAGS) $(HOST_CXXFLAGS)
 LDFLAGS       := $(COMMON_FLAGS)
 $(info Using $(CXX) host compiler installation at $(GCC_TOOLCHAIN) for target $(GCC_TARGET))
@@ -92,6 +95,7 @@ else
   endif
   ROCM_CXX     := $(ROCM_BASE)/bin/hipcc
   ROCM_CXXFLAGS := $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(foreach ARCH,$(ROCM_ARCH),--offload-arch=$(ARCH)) -fhip-fp32-correctly-rounded-divide-sqrt --target=$(GCC_TARGET) --gcc-toolchain=$(GCC_TOOLCHAIN) -I$(ROCM_BASE)/include/hip
+  # ROCM_CXXFLAGS := $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) -Wno-option-ignored $(foreach ARCH,$(ROCM_ARCH),--offload-arch=$(ARCH)) -fhip-fp32-correctly-rounded-divide-sqrt --target=$(GCC_TARGET) --gcc-toolchain=$(GCC_TOOLCHAIN) -I$(ROCM_BASE)/include/hip
   ROCM_LDFLAGS  := -L$(ROCM_LIBDIR) -lamdhip64 -lrocm_smi64 -Wl,-rpath,$(ROCM_LIBDIR) $(LDFLAGS)
 
   # Make sure the tests can find the ROCm libraries

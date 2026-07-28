@@ -6,6 +6,11 @@
 
 #pragma once
 
+// Catch accidental prior inclusion of <stdfloat> before defines.h
+#if defined(_GLIBCXX_STDFLOAT) || defined(_LIBCPP_STDFLOAT) || defined(_STDFLOAT_)
+    #error "<stdfloat> was included before 'xtd/internal/defines.h'. Please include 'defines.h' first."
+#endif
+
 // XTD_DEVICE_FUNCTION
 #if defined(__CUDACC__) || defined(__HIPCC__)
 // CUDA or HIP/ROCm compiler
@@ -42,3 +47,19 @@
 #if defined(XTD_TARGET_SYCL)
 #include <sycl/sycl.hpp>
 #endif
+
+#ifndef XTD_HAS_STDFLOAT16 // Remove this? Mainly for debugging
+#if __has_include(<stdfloat>) && defined(__STDCPP_FLOAT16_T__)
+    #include <stdfloat>
+    #define XTD_HAS_STDFLOAT16 1
+#else
+    #define XTD_HAS_STDFLOAT16 0
+#endif
+#endif
+
+// Prevent accidental downstream includes of <stdfloat>
+#if defined(__GNUC__) || defined(__clang__)
+    #pragma GCC poison stdfloat
+#endif
+
+#include "xtd/internal/float16.h"

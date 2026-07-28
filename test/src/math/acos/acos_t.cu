@@ -16,6 +16,7 @@
 #include "common/cuda/validate.h"
 #include "mpfr_acos.h"
 
+constexpr int ulps_half = 2;
 constexpr int ulps_single = 2;
 constexpr int ulps_double = 2;
 
@@ -24,6 +25,10 @@ TEST_CASE("xtd::acos", "[acos][cuda]") {
   DYNAMIC_SECTION("CUDA platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
+        SECTION("float xtd::acos(float16)") {
+          validate<float16, float16, xtd::acos, mpfr_acosf>(device, ulps_half);
+        }
+
         SECTION("float xtd::acos(float)") {
           validate<float, float, xtd::acos, mpfr_acosf>(device, ulps_single);
         }
@@ -34,6 +39,10 @@ TEST_CASE("xtd::acos", "[acos][cuda]") {
 
         SECTION("double xtd::acos(int)") {
           validate<double, int, xtd::acos, mpfr_acos>(device, ulps_double);
+        }
+
+        SECTION("float xtd::acosf(float16)") {
+          validate<float16, float16, xtd::acosf, mpfr_acosf>(device, ulps_half);
         }
 
         SECTION("float xtd::acosf(float)") {

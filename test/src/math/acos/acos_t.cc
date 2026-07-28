@@ -19,12 +19,17 @@
 #include "common/cpu/validate.h"
 #include "mpfr_acos.h"
 
+constexpr int ulps_half = 1;
 constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
 
 TEST_CASE("xtd::acos", "[acos][cpu]") {
   const auto& device = test::cpu::device();
   DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("float xtd::acos(float16)") {
+      validate<float16, float16, xtd::acos, mpfr_acosf>(device, ulps_half);
+    }
+
     SECTION("float xtd::acos(float)") {
       validate<float, float, xtd::acos, mpfr_acosf>(device, ulps_single);
     }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::acos", "[acos][cpu]") {
 
     SECTION("double xtd::acos(int)") {
       validate<double, int, xtd::acos, mpfr_acos>(device, ulps_double);
+    }
+
+    SECTION("float xtd::acosf(float16)") {
+      validate<float16, float16, xtd::acosf, mpfr_acosf>(device, ulps_half);
     }
 
     SECTION("float xtd::acosf(float)") {

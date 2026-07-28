@@ -25,6 +25,10 @@ TEST_CASE("xtd::acos", "[acos][sycl]") {
     DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
+          SECTION("float16 xtd::acos(float16)") {
+            validate<float16, float16, xtd::acos, mpfr_acosf>(platform, device, ulps_single);
+          }
+
           SECTION("float xtd::acos(float)") {
             validate<float, float, xtd::acos, mpfr_acosf>(platform, device, ulps_single);
           }

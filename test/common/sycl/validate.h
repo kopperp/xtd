@@ -15,6 +15,9 @@
 // SYCL headers
 #include <sycl/sycl.hpp>
 
+// XTD concepts
+#include "xtd/concepts.h"
+
 // Catch2 headers
 #define CATCH_CONFIG_NO_POSIX_SIGNALS
 #include <catch.hpp>
@@ -37,7 +40,7 @@ namespace test::sycl {
     T value_;
   };
 
-  template <std::floating_point T>
+  template <xtd::floating_point T>
   std::ostream& operator<<(std::ostream& out, detailed<T> const& val) {
     std::ostringstream buffer;
     buffer << std::fixed << std::setprecision(std::numeric_limits<T>::max_digits10) << val.value_ << " ["
@@ -52,7 +55,7 @@ namespace test::sycl {
     return out;
   }
 
-  template <std::floating_point ResultType,
+  template <xtd::floating_point ResultType,
             typename InputType,
             ResultType (*XtdFunc)(InputType),
             ResultType (*RefFunc)(InputType)>
@@ -154,7 +157,7 @@ namespace test::sycl {
     std::exit(EXIT_FAILURE);
   }
 
-  template <std::floating_point ResultType,
+  template <xtd::floating_point ResultType,
             typename InputType,
             ResultType (*XtdFunc)(InputType, InputType),
             ResultType (*RefFunc)(InputType, InputType)>
@@ -272,7 +275,7 @@ namespace test::sycl {
     std::exit(EXIT_FAILURE);
   }
 
-  template <std::floating_point ResultType,
+  template <xtd::floating_point ResultType,
             typename InputType,
             ResultType (*XtdFunc)(InputType, InputType, InputType),
             ResultType (*RefFunc)(InputType, InputType, InputType)>

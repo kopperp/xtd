@@ -26,7 +26,7 @@ implementations, see
 
 On a Linux system the math functions are usually provided by GNU libc.
 The accuracy of the GNU libc math functions implementation is described in
-https://www.gnu.org/software/libc/manual/html_node/Errors-in-Math-Functions.html
+https://sourceware.org/glibc/manual/latest/html_node/Errors-in-Math-Functions.html
 and summarised below for an x86_64 host system:
 
 function         |      float |     double

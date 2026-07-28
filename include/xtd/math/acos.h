@@ -12,6 +12,25 @@
 #include "xtd/internal/defines.h"
 
 namespace xtd {
+  /* Computes the inverse cosine (measured in radians) of arg, in half precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 acos(float16 arg) {
+#if defined(XTD_TARGET_CUDA)
+    // CUDA device code
+    return __float2half(::acosf(__half2float(arg)));
+#elif defined(XTD_TARGET_HIP)
+    // HIP/ROCm device code
+    return __float2half_rn(::acosf(__half2float(arg)));
+#elif defined(XTD_TARGET_SYCL)
+    // SYCL device code
+    return __float2half(sycl::acos(__half2float(arg)));
+#elif XTD_HAS_STDFLOAT16
+    return std::acos(std::bit_cast<std::float16_t>(arg));
+#else
+    // standard C/C++ code
+    return float16(std::acos(static_cast<float_t>(arg)));
+#endif
+  }
 
   /* Computes the inverse cosine (measured in radians) of arg, in single precision.
    */
@@ -62,6 +81,11 @@ namespace xtd {
   }
   XTD_DEVICE_FUNCTION inline constexpr float acosf(std::integral auto arg) {
     return xtd::acos(static_cast<float>(arg));
+  }
+  /* Computes the inverse cosine (measured in radians) of arg, in half precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 acosf(float16 arg) {
+    return xtd::acos(arg);
   }
 
 }  // namespace xtd

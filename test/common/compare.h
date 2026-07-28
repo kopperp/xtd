@@ -25,11 +25,11 @@ void compare(T result, T reference, int ulps = 0) {
       break;
     case FP_ZERO:
       // Catch::Matchers::WithinULP does not handle properly the comparison of denormals with zero
-      if (result != static_cast<T>(0)) {
-        CHECK_THAT(result, Catch::Matchers::WithinAbs(reference, std::numeric_limits<T>::denorm_min() * ulps));
-      } else {
-        CHECK_THAT(std::abs(result), Catch::Matchers::WithinULP(static_cast<T>(0), ulps));
-      }
+       // if (result == static_cast<T>(0) || std::fpclassify(result) == FP_SUBNORMAL) {
+         CHECK_THAT(result, Catch::Matchers::WithinAbs(reference, std::numeric_limits<T>::denorm_min() * ulps));
+       // } else {
+       //   CHECK_THAT(std::abs(result), Catch::Matchers::WithinULP(static_cast<T>(0), ulps));
+       // }
       break;
     case FP_SUBNORMAL:
       // Catch::Matchers::WithinULP does not handle properly the comparison of denormals with zero

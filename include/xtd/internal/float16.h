@@ -12,6 +12,7 @@
 #include <cstdint>   // For uint16_t
 #include <bit>       // For std::bit_cast
 // #include <stdfloat>
+#include <ostream>
 
 #include "xtd/internal/defines.h"
 
@@ -40,11 +41,9 @@ public:
         : bits_(__half_as_ushort(__float2half(f))) {}
 #elif defined(XTD_TARGET_HIP)
         // HIP/ROCm device code
-        // : bits_(__half_as_ushort(__float2half(f))) {}
-        : bits_(std::bit_cast<uint16_t>(__float2half_rn(f))) {}
+        : bits_(__half_as_ushort(__float2half(f))) {}
 #elif defined(XTD_TARGET_SYCL)
         // SYCL device code
-        // : bits_(std::bit_cast<uint16_t>(static_cast<sycl::half>(f))) {}
         : bits_(sycl::half2ushort_rn(sycl::float2half_rn(f))) {}
 #else
 #if XTD_HAS_STDFLOAT16
@@ -59,7 +58,7 @@ public:
 
         float32 f32{};
         f32.float_ = f;
-        bits_ = float_to_half( f32.bits_ );
+        bits_ = float_to_half(f32.bits_);
     }
 #endif
 #endif
@@ -73,8 +72,7 @@ public:
         return __half2float(__ushort_as_half(bits_));
 #elif defined(XTD_TARGET_HIP)
         // HIP/ROCm device code
-        // return __half2float(__ushort_as_half(bits_));
-        return __half2float(std::bit_cast<__half>(bits_));
+        return __half2float(__ushort_as_half(bits_));
 #elif defined(XTD_TARGET_SYCL)
         // SYCL device code
         return static_cast<float>(sycl::ushort2half_rn(bits_));
@@ -148,18 +146,34 @@ public:
     /* ========================================================================
      * COMPARISON OPERATORS
      * ===================================================================== */
+    XTD_DEVICE_FUNCTION constexpr bool operator==(const float16& rhs) const noexcept {
+        if (std::isnan(static_cast<float>(*this)) || std::isnan(static_cast<float>(rhs))) {
+            return false;
+        }
+        return to_ordered_int(bits_) == to_ordered_int(rhs.bits_);
+    }
+#if defined(XTD_TARGET_CUDA) || defined(XTD_TARGET_HIP) || defined(XTD_TARGET_SYCL)
+    XTD_DEVICE_FUNCTION constexpr bool operator<(const float16& rhs) const noexcept {
+        if (std::isnan(static_cast<float>(*this)) || std::isnan(static_cast<float>(rhs))) {
+            return false;
+        }
+        return to_ordered_int(bits_) < to_ordered_int(rhs.bits_);
+    }
+#else
     XTD_DEVICE_FUNCTION constexpr std::partial_ordering operator<=>(const float16& rhs) const noexcept {
         if (std::isnan(static_cast<float>(*this)) || std::isnan(static_cast<float>(rhs))) {
             return std::partial_ordering::unordered;
         }
         return to_ordered_int(bits_) <=> to_ordered_int(rhs.bits_);
     }
+#endif
 
-    XTD_DEVICE_FUNCTION constexpr bool operator==(const float16& rhs) const noexcept {
-        if (std::isnan(static_cast<float>(*this)) || std::isnan(static_cast<float>(rhs))) {
-            return false;
-        }
-        return to_ordered_int(bits_) == to_ordered_int(rhs.bits_);
+    /* ========================================================================
+     * UTILITIES
+     * ===================================================================== */
+    friend std::ostream& operator<<(std::ostream& os, float16 const& c)
+    {
+        return os << static_cast<float>(c);
     }
 
 private:

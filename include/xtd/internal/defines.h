@@ -63,3 +63,4 @@
 #endif
 
 #include "xtd/internal/float16.h"
+#include "xtd/internal/concepts.h"

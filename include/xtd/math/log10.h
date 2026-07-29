@@ -12,6 +12,25 @@
 #include "xtd/internal/defines.h"
 
 namespace xtd {
+  /* Computes the base 10 logarithm of arg, in half precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 log10(float16 arg) {
+#if defined(XTD_TARGET_CUDA)
+    // CUDA device code
+    return ::hlog10(arg);
+#elif defined(XTD_TARGET_HIP)
+    // HIP/ROCm device code
+    return ::hlog10(arg);
+#elif defined(XTD_TARGET_SYCL)
+    // SYCL device code
+    return sycl::half_precision::log10(arg);
+#elif XTD_HAS_STDFLOAT16
+    return std::log10(std::bit_cast<std::float16_t>(arg));
+#else
+    // standard C/C++ code
+    return float16(std::log10(static_cast<float_t>(arg)));
+#endif
+  }
 
   /* Computes the base 10 logarithm of arg, in single precision.
    */
@@ -62,6 +81,12 @@ namespace xtd {
   }
   XTD_DEVICE_FUNCTION inline constexpr float log10f(std::integral auto arg) {
     return xtd::log10(static_cast<float>(arg));
+  }
+
+  /* Computes the base 10 logarithm of arg, in half precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 log10f(xtd::floating_point auto arg) {
+    return xtd::log10(static_cast<float16>(arg));
   }
 
 }  // namespace xtd

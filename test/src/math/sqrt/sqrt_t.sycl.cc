@@ -17,6 +17,7 @@
 #include "common/sycl/validate.h"
 #include "mpfr_sqrt.h"
 
+constexpr int ulps_half = 3;
 constexpr int ulps_single = 3;
 constexpr int ulps_double = 0;
 
@@ -25,6 +26,10 @@ TEST_CASE("xtd::sqrt", "[sqrt][sycl]") {
     DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
+          SECTION("float16 xtd::sqrt(float16)") {
+            validate<float16, float16, xtd::sqrt, mpfr_sqrtf>(platform, device, ulps_half);
+          }
+
           SECTION("float xtd::sqrt(float)") {
             validate<float, float, xtd::sqrt, mpfr_sqrtf>(platform, device, ulps_single);
           }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::sqrt", "[sqrt][sycl]") {
 
           SECTION("double xtd::sqrt(int)") {
             validate<double, int, xtd::sqrt, mpfr_sqrt>(platform, device, ulps_double);
+          }
+
+          SECTION("float16 xtd::sqrtf(float16)") {
+            validate<float16, float16, xtd::sqrtf, mpfr_sqrtf>(platform, device, ulps_half);
           }
 
           SECTION("float xtd::sqrtf(float)") {

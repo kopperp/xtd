@@ -17,6 +17,7 @@
 #include "common/sycl/validate.h"
 #include "mpfr_cbrt.h"
 
+constexpr int ulps_half = 2;
 constexpr int ulps_single = 2;
 constexpr int ulps_double = 2;
 
@@ -25,6 +26,10 @@ TEST_CASE("xtd::cbrt", "[cbrt][sycl]") {
     DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
+          SECTION("float16 xtd::cbrt(float16)") {
+            validate<float16, float16, xtd::cbrt, mpfr_cbrtf>(platform, device, ulps_half);
+          }
+
           SECTION("float xtd::cbrt(float)") {
             validate<float, float, xtd::cbrt, mpfr_cbrtf>(platform, device, ulps_single);
           }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::cbrt", "[cbrt][sycl]") {
 
           SECTION("double xtd::cbrt(int)") {
             validate<double, int, xtd::cbrt, mpfr_cbrt>(platform, device, ulps_double);
+          }
+
+          SECTION("float16 xtd::cbrtf(float16)") {
+            validate<float16, float16, xtd::cbrtf, mpfr_cbrtf>(platform, device, ulps_half);
           }
 
           SECTION("float xtd::cbrtf(float)") {

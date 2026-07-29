@@ -12,6 +12,27 @@
 #include "xtd/internal/defines.h"
 
 namespace xtd {
+  /* Computes the inverse sine (measured in radians) of arg, in half precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 asin(float16 arg) {
+#if defined(XTD_TARGET_CUDA)
+    // CUDA device code
+    return __float2half(::asinf(__half2float(arg)));
+#elif defined(XTD_TARGET_HIP)
+    // HIP/ROCm device code
+    // return ::hasin(arg);
+    // AMD uses a suboptimal range reduction, use full float evaluation
+    return float16(::asinf(static_cast<float>(arg)));
+#elif defined(XTD_TARGET_SYCL)
+    // SYCL device code
+    return sycl::half_precision::asin(arg);
+#elif XTD_HAS_STDFLOAT16
+    return std::asin(std::bit_cast<std::float16_t>(arg));
+#else
+    // standard C/C++ code
+    return float16(std::asin(static_cast<float_t>(arg)));
+#endif
+  }
 
   /* Computes the inverse sine (measured in radians) of arg, in single precision.
    */
@@ -62,6 +83,12 @@ namespace xtd {
   }
   XTD_DEVICE_FUNCTION inline constexpr float asinf(std::integral auto arg) {
     return xtd::asin(static_cast<float>(arg));
+  }
+
+  /* Computes the inverse sine (measured in radians) of arg, in half precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 asinf(xtd::floating_point auto arg) {
+    return xtd::asin(static_cast<float16>(arg));
   }
 
 }  // namespace xtd

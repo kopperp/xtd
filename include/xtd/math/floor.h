@@ -12,6 +12,25 @@
 #include "xtd/internal/defines.h"
 
 namespace xtd {
+  /* Computes the largest integral value that is not greater than arg, in half precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 floor(float16 arg) {
+#if defined(XTD_TARGET_CUDA)
+    // CUDA device code
+    return ::hfloor(arg);
+#elif defined(XTD_TARGET_HIP)
+    // HIP/ROCm device code
+    return ::hfloor(arg);
+#elif defined(XTD_TARGET_SYCL)
+    // SYCL device code
+    return sycl::half_precision::floor(arg);
+#elif XTD_HAS_STDFLOAT16
+    return std::floor(std::bit_cast<std::float16_t>(arg));
+#else
+    // standard C/C++ code
+    return float16(std::floor(static_cast<float_t>(arg)));
+#endif
+  }
 
   /* Computes the largest integral value that is not greater than arg, in single precision.
    */
@@ -62,6 +81,12 @@ namespace xtd {
   }
   XTD_DEVICE_FUNCTION inline constexpr float floorf(std::integral auto arg) {
     return xtd::floor(static_cast<float>(arg));
+  }
+
+  /* Computes the largest integral value that is not greater than arg, in half precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 floorf(xtd::floating_point auto arg) {
+    return xtd::floor(static_cast<float16>(arg));
   }
 
 }  // namespace xtd

@@ -16,6 +16,7 @@
 #include "common/hip/validate.h"
 #include "mpfr_rint.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
@@ -24,6 +25,10 @@ TEST_CASE("xtd::rint", "[rint][hip]") {
   DYNAMIC_SECTION("HIP platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("HIP device " << device.index() << ": " << device.name()) {
+        SECTION("float16 xtd::rint(float16)") {
+          validate<float16, float16, xtd::rint, mpfr_rintf>(device, ulps_half);
+        }
+
         SECTION("float xtd::rint(float)") {
           validate<float, float, xtd::rint, mpfr_rintf>(device, ulps_single);
         }
@@ -34,6 +39,10 @@ TEST_CASE("xtd::rint", "[rint][hip]") {
 
         SECTION("double xtd::rint(int)") {
           validate<double, int, xtd::rint, mpfr_rint>(device, ulps_double);
+        }
+
+        SECTION("float16 xtd::rintf(float16)") {
+          validate<float16, float16, xtd::rintf, mpfr_rintf>(device, ulps_half);
         }
 
         SECTION("float xtd::rintf(float)") {

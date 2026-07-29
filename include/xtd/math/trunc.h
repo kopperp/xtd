@@ -12,6 +12,25 @@
 #include "xtd/internal/defines.h"
 
 namespace xtd {
+  /* Computes the nearest integral value to arg in half precision, always rounding towards zero.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 trunc(float16 arg) {
+#if defined(XTD_TARGET_CUDA)
+    // CUDA device code
+    return ::htrunc(arg);
+#elif defined(XTD_TARGET_HIP)
+    // HIP/ROCm device code
+    return ::htrunc(arg);
+#elif defined(XTD_TARGET_SYCL)
+    // SYCL device code
+    return sycl::half_precision::trunc(arg);
+#elif XTD_HAS_STDFLOAT16
+    return std::trunc(std::bit_cast<std::float16_t>(arg));
+#else
+    // standard C/C++ code
+    return float16(std::trunc(static_cast<float_t>(arg)));
+#endif
+  }
 
   /* Computes the nearest integral value to arg in single precision, always rounding towards zero.
    */
@@ -62,6 +81,12 @@ namespace xtd {
   }
   XTD_DEVICE_FUNCTION inline constexpr float truncf(std::integral auto arg) {
     return xtd::trunc(static_cast<float>(arg));
+  }
+
+  /* Computes the nearest integral value to arg in half precision, always rounding towards zero.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 truncf(xtd::floating_point auto arg) {
+    return xtd::trunc(static_cast<float16>(arg));
   }
 
 }  // namespace xtd

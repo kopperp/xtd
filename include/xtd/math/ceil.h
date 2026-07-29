@@ -12,6 +12,25 @@
 #include "xtd/internal/defines.h"
 
 namespace xtd {
+  /* Computes the smallest integral value that is not less than arg, in half precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 ceil(float16 arg) {
+#if defined(XTD_TARGET_CUDA)
+    // CUDA device code
+    return ::hceil(arg);
+#elif defined(XTD_TARGET_HIP)
+    // HIP/ROCm device code
+    return ::hceil(arg);
+#elif defined(XTD_TARGET_SYCL)
+    // SYCL device code
+    return sycl::half_precision::ceil(arg);
+#elif XTD_HAS_STDFLOAT16
+    return std::ceil(std::bit_cast<std::float16_t>(arg));
+#else
+    // standard C/C++ code
+    return float16(std::ceil(static_cast<float_t>(arg)));
+#endif
+  }
 
   /* Computes the smallest integral value that is not less than arg, in single precision.
    */
@@ -62,6 +81,12 @@ namespace xtd {
   }
   XTD_DEVICE_FUNCTION inline constexpr float ceilf(std::integral auto arg) {
     return xtd::ceil(static_cast<float>(arg));
+  }
+
+  /* Computes the smallest integral value that is not less than arg, in half precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 ceilf(xtd::floating_point auto arg) {
+    return xtd::ceil(static_cast<float16>(arg));
   }
 
 }  // namespace xtd

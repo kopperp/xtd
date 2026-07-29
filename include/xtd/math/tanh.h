@@ -12,6 +12,26 @@
 #include "xtd/internal/defines.h"
 
 namespace xtd {
+  /* Computes the hyperbolic tangent of arg, in half precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 tanh(float16 arg) {
+#if defined(XTD_TARGET_CUDA)
+    // CUDA device code
+    return ::htanh(arg);
+#elif defined(XTD_TARGET_HIP)
+    // HIP/ROCm device code
+    // HIP is missing this specific function
+    return float16(::tanh(static_cast<float_t>(arg)));
+#elif defined(XTD_TARGET_SYCL)
+    // SYCL device code
+    return sycl::half_precision::tanh(arg);
+#elif XTD_HAS_STDFLOAT16
+    return std::tanh(std::bit_cast<std::float16_t>(arg));
+#else
+    // standard C/C++ code
+    return float16(std::tanh(static_cast<float_t>(arg)));
+#endif
+  }
 
   /* Computes the hyperbolic tangent of arg, in single precision.
    */
@@ -62,6 +82,12 @@ namespace xtd {
   }
   XTD_DEVICE_FUNCTION inline constexpr float tanhf(std::integral auto arg) {
     return xtd::tanh(static_cast<float>(arg));
+  }
+
+  /* Computes the hyperbolic tangent of arg, in half precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 tanhf(xtd::floating_point auto arg) {
+    return xtd::tanh(static_cast<float16>(arg));
   }
 
 }  // namespace xtd

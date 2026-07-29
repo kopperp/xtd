@@ -16,6 +16,7 @@
 #include "common/hip/validate.h"
 #include "mpfr_log10.h"
 
+constexpr int ulps_half = 2;
 constexpr int ulps_single = 2;
 constexpr int ulps_double = 1;
 
@@ -24,6 +25,10 @@ TEST_CASE("xtd::log10", "[log10][hip]") {
   DYNAMIC_SECTION("HIP platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("HIP device " << device.index() << ": " << device.name()) {
+        SECTION("float16 xtd::log10(float16)") {
+          validate<float16, float16, xtd::log10, mpfr_log10f>(device, ulps_half);
+        }
+
         SECTION("float xtd::log10(float)") {
           validate<float, float, xtd::log10, mpfr_log10f>(device, ulps_single);
         }
@@ -34,6 +39,10 @@ TEST_CASE("xtd::log10", "[log10][hip]") {
 
         SECTION("double xtd::log10(int)") {
           validate<double, int, xtd::log10, mpfr_log10>(device, ulps_double);
+        }
+
+        SECTION("float16 xtd::log10f(float16)") {
+          validate<float16, float16, xtd::log10f, mpfr_log10f>(device, ulps_half);
         }
 
         SECTION("float xtd::log10f(float)") {

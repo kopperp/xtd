@@ -19,12 +19,17 @@
 #include "common/cpu/validate.h"
 #include "mpfr_asin.h"
 
+constexpr int ulps_half = 1;
 constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
 
 TEST_CASE("xtd::asin", "[asin][cpu]") {
   const auto& device = test::cpu::device();
   DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("float16 xtd::asin(float16)") {
+      validate<float16, float16, xtd::asin, mpfr_asinf>(device, ulps_half);
+    }
+
     SECTION("float xtd::asin(float)") {
       validate<float, float, xtd::asin, mpfr_asinf>(device, ulps_single);
     }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::asin", "[asin][cpu]") {
 
     SECTION("double xtd::asin(int)") {
       validate<double, int, xtd::asin, mpfr_asin>(device, ulps_double);
+    }
+
+    SECTION("float16 xtd::asinf(float16)") {
+      validate<float16, float16, xtd::asinf, mpfr_asinf>(device, ulps_half);
     }
 
     SECTION("float xtd::asinf(float)") {

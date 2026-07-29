@@ -16,6 +16,7 @@
 #include "common/cuda/validate.h"
 #include "mpfr_cbrt.h"
 
+constexpr int ulps_half = 1;
 constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
 
@@ -24,6 +25,10 @@ TEST_CASE("xtd::cbrt", "[cbrt][cuda]") {
   DYNAMIC_SECTION("CUDA platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
+        SECTION("float16 xtd::cbrt(float16)") {
+          validate<float16, float16, xtd::cbrt, mpfr_cbrtf>(device, ulps_half);
+        }
+
         SECTION("float xtd::cbrt(float)") {
           validate<float, float, xtd::cbrt, mpfr_cbrtf>(device, ulps_single);
         }
@@ -34,6 +39,10 @@ TEST_CASE("xtd::cbrt", "[cbrt][cuda]") {
 
         SECTION("double xtd::cbrt(int)") {
           validate<double, int, xtd::cbrt, mpfr_cbrt>(device, ulps_double);
+        }
+
+        SECTION("float16 xtd::cbrtf(float16)") {
+          validate<float16, float16, xtd::cbrtf, mpfr_cbrtf>(device, ulps_half);
         }
 
         SECTION("float xtd::cbrtf(float)") {

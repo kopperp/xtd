@@ -17,6 +17,7 @@
 #include "common/sycl/validate.h"
 #include "mpfr_log.h"
 
+constexpr int ulps_half = 3;
 constexpr int ulps_single = 3;
 constexpr int ulps_double = 3;
 
@@ -25,6 +26,10 @@ TEST_CASE("xtd::log", "[log][sycl]") {
     DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
+          SECTION("float16 xtd::log(float16)") {
+            validate<float16, float16, xtd::log, mpfr_logf>(platform, device, ulps_half);
+          }
+
           SECTION("float xtd::log(float)") {
             validate<float, float, xtd::log, mpfr_logf>(platform, device, ulps_single);
           }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::log", "[log][sycl]") {
 
           SECTION("double xtd::log(int)") {
             validate<double, int, xtd::log, mpfr_log>(platform, device, ulps_double);
+          }
+
+          SECTION("float16 xtd::logf(float16)") {
+            validate<float16, float16, xtd::logf, mpfr_logf>(platform, device, ulps_half);
           }
 
           SECTION("float xtd::logf(float)") {

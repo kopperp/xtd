@@ -19,12 +19,17 @@
 #include "common/cpu/validate.h"
 #include "mpfr_log.h"
 
+constexpr int ulps_half = 1;
 constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
 
 TEST_CASE("xtd::log", "[log][cpu]") {
   const auto& device = test::cpu::device();
   DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("float16 xtd::log(float16)") {
+      validate<float16, float16, xtd::log, mpfr_logf>(device, ulps_half);
+    }
+
     SECTION("float xtd::log(float)") {
       validate<float, float, xtd::log, mpfr_logf>(device, ulps_single);
     }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::log", "[log][cpu]") {
 
     SECTION("double xtd::log(int)") {
       validate<double, int, xtd::log, mpfr_log>(device, ulps_double);
+    }
+
+    SECTION("float16 xtd::logf(float16)") {
+      validate<float16, float16, xtd::logf, mpfr_logf>(device, ulps_half);
     }
 
     SECTION("float xtd::logf(float)") {

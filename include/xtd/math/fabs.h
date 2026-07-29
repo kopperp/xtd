@@ -84,4 +84,10 @@ namespace xtd {
     return xtd::fabs(static_cast<float>(arg));
   }
 
+  /* Computes the absolute value of arg, in half precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 fabsf(xtd::floating_point auto arg) {
+    return xtd::fabs(static_cast<float16>(arg));
+  }
+
 }  // namespace xtd

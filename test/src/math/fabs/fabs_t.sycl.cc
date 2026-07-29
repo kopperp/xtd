@@ -17,6 +17,7 @@
 #include "common/sycl/validate.h"
 #include "mpfr_fabs.h"
 
+constexpr int ulps_half = 0;
 constexpr int ulps_single = 0;
 constexpr int ulps_double = 0;
 
@@ -25,6 +26,10 @@ TEST_CASE("xtd::fabs", "[fabs][sycl]") {
     DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
+          SECTION("float16 xtd::fabs(float16)") {
+            validate<float16, float16, xtd::fabs, mpfr_fabsf>(platform, device, ulps_half);
+          }
+
           SECTION("float xtd::fabs(float)") {
             validate<float, float, xtd::fabs, mpfr_fabsf>(platform, device, ulps_single);
           }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::fabs", "[fabs][sycl]") {
 
           SECTION("double xtd::fabs(int)") {
             validate<double, int, xtd::fabs, mpfr_fabs>(platform, device, ulps_double);
+          }
+
+          SECTION("float16 xtd::fabsf(float16)") {
+            validate<float16, float16, xtd::fabsf, mpfr_fabsf>(platform, device, ulps_half);
           }
 
           SECTION("float xtd::fabsf(float)") {

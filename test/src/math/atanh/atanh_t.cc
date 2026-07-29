@@ -19,12 +19,17 @@
 #include "common/cpu/validate.h"
 #include "mpfr_atanh.h"
 
+constexpr int ulps_half = 2;
 constexpr int ulps_single = 2;
 constexpr int ulps_double = 2;
 
 TEST_CASE("xtd::atanh", "[atanh][cpu]") {
   const auto& device = test::cpu::device();
   DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("float16 xtd::atanh(float16)") {
+      validate<float16, float16, xtd::atanh, mpfr_atanhf>(device, ulps_half);
+    }
+
     SECTION("float xtd::atanh(float)") {
       validate<float, float, xtd::atanh, mpfr_atanhf>(device, ulps_single);
     }
@@ -35,6 +40,10 @@ TEST_CASE("xtd::atanh", "[atanh][cpu]") {
 
     SECTION("double xtd::atanh(int)") {
       validate<double, int, xtd::atanh, mpfr_atanh>(device, ulps_double);
+    }
+
+    SECTION("float16 xtd::atanhf(float16)") {
+      validate<float16, float16, xtd::atanhf, mpfr_atanhf>(device, ulps_half);
     }
 
     SECTION("float xtd::atanhf(float)") {

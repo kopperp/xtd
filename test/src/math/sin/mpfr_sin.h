@@ -17,6 +17,12 @@
 #undef mpfr_sin
 #endif
 
+inline float16 mpfr_sinf(xtd::arithmetic auto arg) {
+  float result;
+  mpfr::sin(static_cast<mpfr_half>(static_cast<float>(arg))).conv(result);
+  return result;
+}
+
 inline float mpfr_sinf(xtd::arithmetic auto arg) {
   float result;
   mpfr::sin(static_cast<mpfr_single>(static_cast<float>(arg))).conv(result);

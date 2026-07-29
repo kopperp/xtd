@@ -17,6 +17,12 @@
 #undef mpfr_ceil
 #endif
 
+inline float16 mpfr_ceilf(xtd::arithmetic auto arg) {
+  float result;
+  mpfr::ceil(static_cast<mpfr_half>(static_cast<float>(arg))).conv(result);
+  return result;
+}
+
 inline float mpfr_ceilf(xtd::arithmetic auto arg) {
   float result;
   mpfr::ceil(static_cast<mpfr_single>(static_cast<float>(arg))).conv(result);

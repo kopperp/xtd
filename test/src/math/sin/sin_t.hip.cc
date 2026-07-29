@@ -16,6 +16,7 @@
 #include "common/hip/validate.h"
 #include "mpfr_sin.h"
 
+constexpr int ulps_half = 1;
 constexpr int ulps_single = 1;
 constexpr int ulps_double = 1;
 
@@ -24,6 +25,10 @@ TEST_CASE("xtd::sin", "[sin][hip]") {
   DYNAMIC_SECTION("HIP platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("HIP device " << device.index() << ": " << device.name()) {
+        SECTION("float16 xtd::sin(float16)") {
+          validate<float16, float16, xtd::sin, mpfr_sinf>(device, ulps_half);
+        }
+
         SECTION("float xtd::sin(float)") {
           validate<float, float, xtd::sin, mpfr_sinf>(device, ulps_single);
         }
@@ -34,6 +39,10 @@ TEST_CASE("xtd::sin", "[sin][hip]") {
 
         SECTION("double xtd::sin(int)") {
           validate<double, int, xtd::sin, mpfr_sin>(device, ulps_double);
+        }
+
+        SECTION("float16 xtd::sinf(float16)") {
+          validate<float16, float16, xtd::sinf, mpfr_sinf>(device, ulps_half);
         }
 
         SECTION("float xtd::sinf(float)") {

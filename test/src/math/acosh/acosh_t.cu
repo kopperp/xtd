@@ -16,6 +16,7 @@
 #include "common/cuda/validate.h"
 #include "mpfr_acosh.h"
 
+constexpr int ulps_half = 4;
 constexpr int ulps_single = 4;
 constexpr int ulps_double = 3;
 
@@ -24,6 +25,10 @@ TEST_CASE("xtd::acosh", "[acosh][cuda]") {
   DYNAMIC_SECTION("CUDA platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
+        SECTION("float16 xtd::acosh(float16)") {
+          validate<float16, float16, xtd::acosh, mpfr_acoshf>(device, ulps_half);
+        }
+
         SECTION("float xtd::acosh(float)") {
           validate<float, float, xtd::acosh, mpfr_acoshf>(device, ulps_single);
         }

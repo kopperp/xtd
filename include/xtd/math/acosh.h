@@ -13,6 +13,26 @@
 
 namespace xtd {
 
+  /* Computes the inverse hyperbolic cosine of arg, in half precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 acosh(float16 arg) {
+#if defined(XTD_TARGET_CUDA)
+    // CUDA device code
+    return __float2half(::acoshf(__half2float(arg)));
+#elif defined(XTD_TARGET_HIP)
+    // HIP/ROCm device code
+    return __float2half_rn(::acoshf(__half2float(arg)));
+#elif defined(XTD_TARGET_SYCL)
+    // SYCL device code
+    return __float2half(sycl::acosh(__half2float(arg)));
+#elif XTD_HAS_STDFLOAT16
+    return std::acosh(std::bit_cast<std::float16_t>(arg));
+#else
+    // standard C/C++ code
+    return float16(std::acosh(static_cast<float_t>(arg)));
+#endif
+  }
+
   /* Computes the inverse hyperbolic cosine of arg, in single precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float acosh(float arg) {

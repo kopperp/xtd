@@ -19,12 +19,17 @@
 #include "common/cpu/validate.h"
 #include "mpfr_acosh.h"
 
+constexpr int ulps_half = 2;
 constexpr int ulps_single = 2;
 constexpr int ulps_double = 2;
 
 TEST_CASE("xtd::acosh", "[acosh][cpu]") {
   const auto& device = test::cpu::device();
   DYNAMIC_SECTION("CPU: " << device.name()) {
+    SECTION("float16 xtd::acosh(float16)") {
+      validate<float16, float16, xtd::acosh, mpfr_acoshf>(device, ulps_half);
+    }
+
     SECTION("float xtd::acosh(float)") {
       validate<float, float, xtd::acosh, mpfr_acoshf>(device, ulps_single);
     }

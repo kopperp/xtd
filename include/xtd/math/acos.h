@@ -82,10 +82,11 @@ namespace xtd {
   XTD_DEVICE_FUNCTION inline constexpr float acosf(std::integral auto arg) {
     return xtd::acos(static_cast<float>(arg));
   }
+
   /* Computes the inverse cosine (measured in radians) of arg, in half precision.
    */
-  XTD_DEVICE_FUNCTION inline constexpr float16 acosf(float16 arg) {
-    return xtd::acos(arg);
+  XTD_DEVICE_FUNCTION inline constexpr float16 acosf(xtd::floating_point auto arg) {
+    return xtd::acos(static_cast<float16>(arg));
   }
 
 }  // namespace xtd

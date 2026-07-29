@@ -13,6 +13,28 @@
 
 namespace xtd {
 
+  /* Computes the cosine of arg (measured in radians), in half precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 cos(float16 arg) {
+#if defined(XTD_TARGET_CUDA)
+    // CUDA device code
+    return ::hcos(arg);
+#elif defined(XTD_TARGET_HIP)
+    // HIP/ROCm device code
+    // return ::hcos(arg);
+    // AMD uses a suboptimal range reduction, use full float evaluation
+    return float16(::cosf(static_cast<float>(arg)));
+#elif defined(XTD_TARGET_SYCL)
+    // SYCL device code
+    return sycl::half_precision::cos(arg);
+#elif XTD_HAS_STDFLOAT16
+    return std::cos(std::bit_cast<std::float16_t>(arg));
+#else
+    // standard C/C++ code
+    return float16(std::cos(static_cast<float_t>(arg)));
+#endif
+  }
+
   /* Computes the cosine of arg (measured in radians), in single precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float cos(float arg) {
@@ -62,6 +84,12 @@ namespace xtd {
   }
   XTD_DEVICE_FUNCTION inline constexpr float cosf(std::integral auto arg) {
     return xtd::cos(static_cast<float>(arg));
+  }
+
+  /* Computes the cosine of arg (measured in radians), in half precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 cosf(xtd::floating_point auto arg) {
+    return xtd::cos(static_cast<float16>(arg));
   }
 
 }  // namespace xtd

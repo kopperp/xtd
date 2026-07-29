@@ -16,6 +16,7 @@
 #include "common/cuda/validate.h"
 #include "mpfr_cos.h"
 
+constexpr int ulps_half = 2;
 constexpr int ulps_single = 2;
 constexpr int ulps_double = 2;
 
@@ -24,6 +25,10 @@ TEST_CASE("xtd::cos", "[cos][cuda]") {
   DYNAMIC_SECTION("CUDA platform: " << platform.name()) {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
+        SECTION("float16 xtd::cos(float16)") {
+          validate<float16, float16, xtd::cos, mpfr_cosf>(device, ulps_half);
+        }
+
         SECTION("float xtd::cos(float)") {
           validate<float, float, xtd::cos, mpfr_cosf>(device, ulps_single);
         }
@@ -34,6 +39,10 @@ TEST_CASE("xtd::cos", "[cos][cuda]") {
 
         SECTION("double xtd::cos(int)") {
           validate<double, int, xtd::cos, mpfr_cos>(device, ulps_double);
+        }
+
+        SECTION("float16 xtd::cosf(float16)") {
+          validate<float16, float16, xtd::cosf, mpfr_cosf>(device, ulps_half);
         }
 
         SECTION("float xtd::cosf(float)") {

@@ -22,6 +22,10 @@ TEST_CASE("xtd::isnan", "[isnan][sycl]") {
     DYNAMIC_SECTION("SYCL platform " << platform.index() << ": " << platform.name()) {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
+          SECTION("int xtd::isnan(float16)") {
+            validate<int, float16, xtd::isnan, reference_isnan>(platform, device);
+          }
+
           SECTION("int xtd::isnan(float)") {
             validate<int, float, xtd::isnan, reference_isnan>(platform, device);
           }

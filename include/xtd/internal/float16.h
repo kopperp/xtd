@@ -144,6 +144,68 @@ public:
 #endif
 
     /* ========================================================================
+     * UNARY OPERATORS
+     * ===================================================================== */
+    XTD_DEVICE_FUNCTION constexpr float16 operator+() const noexcept { return *this; }
+    XTD_DEVICE_FUNCTION constexpr float16 operator-() const noexcept {
+        float16 res = *this;
+        res.bits_ ^= 0x8000;
+        return res;
+    }
+
+    /* ========================================================================
+     * ARITHMETIC OPERATORS
+     * ===================================================================== */
+    XTD_DEVICE_FUNCTION constexpr float16 operator+(float16 rhs) const noexcept {
+        return float16(static_cast<float>(*this) + static_cast<float>(rhs));
+    }
+    XTD_DEVICE_FUNCTION constexpr float16 operator-(float16 rhs) const noexcept {
+        return float16(static_cast<float>(*this) - static_cast<float>(rhs));
+    }
+    XTD_DEVICE_FUNCTION constexpr float16 operator*(float16 rhs) const noexcept {
+        return float16(static_cast<float>(*this) * static_cast<float>(rhs));
+    }
+    XTD_DEVICE_FUNCTION constexpr float16 operator/(float16 rhs) const noexcept {
+        return float16(static_cast<float>(*this) / static_cast<float>(rhs));
+    }
+
+    XTD_DEVICE_FUNCTION constexpr float16& operator+=(float16 rhs) noexcept { *this = *this + rhs; return *this; }
+    XTD_DEVICE_FUNCTION constexpr float16& operator-=(float16 rhs) noexcept { *this = *this - rhs; return *this; }
+    XTD_DEVICE_FUNCTION constexpr float16& operator*=(float16 rhs) noexcept { *this = *this * rhs; return *this; }
+    XTD_DEVICE_FUNCTION constexpr float16& operator/=(float16 rhs) noexcept { *this = *this / rhs; return *this; }
+
+    /* ========================================================================
+     * TEMPLATED ARITHMETIC OPERATORS
+     * ===================================================================== */
+    template <typename L, typename R>
+    requires (std::is_same_v<L, float16> && std::is_arithmetic_v<R>) ||
+             (std::is_arithmetic_v<L> && std::is_same_v<R, float16>)
+    XTD_DEVICE_FUNCTION friend constexpr float operator+(L lhs, R rhs) noexcept {
+        return static_cast<float>(lhs) + static_cast<float>(rhs);
+    }
+
+    template <typename L, typename R>
+    requires (std::is_same_v<L, float16> && std::is_arithmetic_v<R>) ||
+             (std::is_arithmetic_v<L> && std::is_same_v<R, float16>)
+    XTD_DEVICE_FUNCTION friend constexpr float operator*(L lhs, R rhs) noexcept {
+        return static_cast<float>(lhs) * static_cast<float>(rhs);
+    }
+
+    template <typename L, typename R>
+    requires (std::is_same_v<L, float16> && std::is_arithmetic_v<R>) ||
+             (std::is_arithmetic_v<L> && std::is_same_v<R, float16>)
+    XTD_DEVICE_FUNCTION friend constexpr float operator-(L lhs, R rhs) noexcept {
+        return static_cast<float>(lhs) - static_cast<float>(rhs);
+    }
+
+    template <typename L, typename R>
+    requires (std::is_same_v<L, float16> && std::is_arithmetic_v<R>) ||
+             (std::is_arithmetic_v<L> && std::is_same_v<R, float16>)
+    XTD_DEVICE_FUNCTION friend constexpr float operator/(L lhs, R rhs) noexcept {
+        return static_cast<float>(lhs) / static_cast<float>(rhs);
+    }
+
+    /* ========================================================================
      * COMPARISON OPERATORS
      * ===================================================================== */
     XTD_DEVICE_FUNCTION constexpr bool operator==(const float16& rhs) const noexcept {
@@ -153,6 +215,10 @@ public:
         return to_ordered_int(bits_) == to_ordered_int(rhs.bits_);
     }
 #if defined(XTD_TARGET_CUDA) || defined(XTD_TARGET_HIP) || defined(XTD_TARGET_SYCL)
+    XTD_DEVICE_FUNCTION constexpr bool operator!=(const float16& rhs) const noexcept { return !(*this == rhs); }
+    XTD_DEVICE_FUNCTION constexpr bool operator>(const float16& rhs) const noexcept { return rhs < *this; }
+    XTD_DEVICE_FUNCTION constexpr bool operator<=(const float16& rhs) const noexcept { return !(rhs < *this); }
+    XTD_DEVICE_FUNCTION constexpr bool operator>=(const float16& rhs) const noexcept { return !(*this < rhs); }
     XTD_DEVICE_FUNCTION constexpr bool operator<(const float16& rhs) const noexcept {
         if (std::isnan(static_cast<float>(*this)) || std::isnan(static_cast<float>(rhs))) {
             return false;
@@ -182,8 +248,8 @@ private:
     uint16_t bits_;
 
     XTD_DEVICE_FUNCTION constexpr static std::int16_t to_ordered_int(std::uint16_t u) noexcept {
-        u = (u == 0x8000) ? 0 : u;  // Handling Signed Zero
-        return (u & 0x8000) ? static_cast<std::int16_t>(0x8000 - u) : static_cast<std::int16_t>(u);  // Converting Sign-Magnitude to Two's Complement
+        u = (u == 0x8000) ? 0 : u;  // Handling signed zero
+        return (u & 0x8000) ? static_cast<std::int16_t>(0x8000 - u) : static_cast<std::int16_t>(u);  // Converting sign-magnitude to two's complement
     }
 
     /* Copyright <2020> <Feng Wang>

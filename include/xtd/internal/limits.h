@@ -58,6 +58,13 @@ namespace std {
 
       static constexpr int digits = __FLT16_MANT_DIG__;
       static constexpr int digits10 = __FLT16_DIG__;
+#if __cplusplus >= 201103L
+#define __glibcxx_max_digits10(T) \
+  (2 + (T) * 643L / 2136)
+      static constexpr int max_digits10
+	 = __glibcxx_max_digits10 (__FLT16_MANT_DIG__);
+#undef __glibcxx_max_digits10
+#endif
       static constexpr bool is_signed = true;
       static constexpr bool is_integer = false;
       static constexpr bool is_exact = false;
@@ -79,9 +86,12 @@ namespace std {
       static constexpr float_denorm_style has_denorm = bool(__FLT16_HAS_DENORM__) ? denorm_present : denorm_absent;
       static constexpr bool has_denorm_loss = __glibcxx_float16_has_denorm_loss;
 
-      static constexpr float16 infinity() noexcept { return std::bit_cast<float16>(static_cast<uint16_t>(__builtin_huge_val())); }
-      static constexpr float16 quiet_NaN() noexcept { return std::bit_cast<float16>(static_cast<uint16_t>(__builtin_nan(""))); }
-      static constexpr float16 signaling_NaN() noexcept { return std::bit_cast<float16>(static_cast<uint16_t>(__builtin_nans(""))); }
+      // static constexpr float16 infinity() noexcept { return std::bit_cast<float16>(static_cast<uint16_t>(__builtin_huge_val())); }
+      // static constexpr float16 quiet_NaN() noexcept { return std::bit_cast<float16>(static_cast<uint16_t>(__builtin_nan(""))); }
+      // static constexpr float16 signaling_NaN() noexcept { return std::bit_cast<float16>(static_cast<uint16_t>(__builtin_nans(""))); }
+      static constexpr float16 infinity() noexcept { return std::bit_cast<float16>(static_cast<uint16_t>(0x7C00)); }
+      static constexpr float16 quiet_NaN() noexcept { return std::bit_cast<float16>(static_cast<uint16_t>(0x7E00)); }
+      static constexpr float16 signaling_NaN() noexcept { return std::bit_cast<float16>(static_cast<uint16_t>(0x7D00)); }
       static constexpr float16 denorm_min() noexcept { return __FLT16_DENORM_MIN__; }
 
       static constexpr bool is_iec559 = has_infinity && has_quiet_NaN && has_denorm == denorm_present;

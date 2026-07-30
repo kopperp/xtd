@@ -1,0 +1,64 @@
+/*
+ * Copyright 2026 European Organization for Nuclear Research (CERN)
+ * Authors: Andrea Bocci <andrea.bocci@cern.ch>, Aurora Perego <aurora.perego@cern.ch>
+ * SPDX-License-Identifier: MPL-2.0
+ */
+
+// C++ standard headers
+#include <cmath>
+#include <vector>
+
+// Catch2 headers
+#include <catch_amalgamated.hpp>
+
+// xtd headers
+#include "xtd/math/copysign.h"
+
+// test headers
+#include "common/cpu/device.h"
+#include "common/cpu/benchmark.h"
+
+// constexpr int ulps_half = 0;
+constexpr int ulps_single = 0;
+constexpr int ulps_double = 0;
+
+TEST_CASE("xtd::copysign", "[copysign][cpu]") {
+  const auto& device = test::cpu::device();
+  DYNAMIC_SECTION("CPU: " << device.name()) {
+    /* FIXME: half precision is insufficient
+    SECTION("float16 xtd::copysign(float16, float16)") {
+      benchmark<float16, float16, xtd::copysign>(device);
+    }
+    */
+
+    SECTION("float xtd::copysign(float, float)") {
+      benchmark<float, float, xtd::copysign>(device);
+    }
+
+    SECTION("double xtd::copysign(double, double)") {
+      benchmark<double, double, xtd::copysign>(device);
+    }
+
+    SECTION("double xtd::copysign(int, int)") {
+      benchmark<double, int, xtd::copysign>(device);
+    }
+
+    /* FIXME: half precision is insufficient
+    SECTION("float16 xtd::copysignf(float16, float16)") {
+      benchmark<float16, float16, xtd::copysignf>(device);
+    }
+    */
+
+    SECTION("float xtd::copysignf(float, float)") {
+      benchmark<float, float, xtd::copysignf>(device);
+    }
+
+    SECTION("float xtd::copysignf(double, double)") {
+      benchmark<float, double, xtd::copysignf>(device);
+    }
+
+    SECTION("float xtd::copysignf(int, int)") {
+      benchmark<float, int, xtd::copysignf>(device);
+    }
+  }
+}

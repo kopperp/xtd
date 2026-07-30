@@ -1,0 +1,400 @@
+# Copyright 2026 European Organization for Nuclear Research (CERN)
+# Authors: Andrea Bocci <andrea.bocci@cern.ch>, Aurora Perego <aurora.perego@cern.ch>, Simone Balducci <simone.balducci@cern.ch>, Patrick Kopper <patrick.kopper@cern.ch>
+# SPDX-License-Identifier: MPL-2.0
+
+.DELETE_ON_ERROR:
+
+.PHONY: all
+all: run
+
+.PHONY: build
+build:
+
+.PHONY: run
+run: build
+
+.PHONY: clean
+clean:
+	rm -rf tmp/ bin/
+
+.PHONY: distclean
+distclean: clean
+	rm -rf external/
+
+# makefile tricks
+define newline
+
+
+endef
+
+space := $() $()
+comma := $(),$()
+
+# compilation flags used by all compilers and backends
+COMMON_FLAGS := -O2 -g
+CPU_FLAGS    := -std=c++23
+GPU_FLAGS    := -std=c++20
+
+# Catch2 needs -Wno-unused-variable
+# HOST_CXXFLAGS := -march=native -Wall -Wextra -Werror -Wno-unused-variable -fPIC
+HOST_CXXFLAGS := -march=native -Wall -Wextra -Werror -Wno-unused-variable -Wno-unused-parameter -fPIC
+# HOST_CXXFLAGS := -Wall -Wextra -Werror -Wno-unused-variable -Wno-unused-parameter -Wno-self-assign-overloaded -fPIC
+
+# Compiler flags supported by GCC but not by the LLVM-based compilers (clang, hipcc, icpx, etc.)
+LLVM_UNSUPPORTED_CXXFLAGS := --param vect-max-version-for-alias-checks=50 -Werror=format-contains-nul -Wno-non-template-friend -Werror=return-local-addr -Werror=unused-but-set-variable
+
+# gcc
+CXX           := g++
+GCC_TOOLCHAIN := $(abspath $(dir $(shell which $(CXX)))/..)
+GCC_TARGET    := $(shell $(CXX) -dumpmachine)
+# CXXFLAGS      := $(COMMON_FLAGS) $(HOST_CXXFLAGS) -fsanitize=address
+# LDFLAGS       := $(COMMON_FLAGS) -fsanitize=address
+CXXFLAGS      := $(COMMON_FLAGS) $(CPU_FLAGS) $(HOST_CXXFLAGS)
+LDFLAGS       := $(COMMON_FLAGS)
+$(info Using $(CXX) host compiler installation at $(GCC_TOOLCHAIN) for target $(GCC_TARGET))
+
+# CUDA
+CUDA_BASE := /usr/local/cuda
+# default to the list of all supported major architectures
+CUDA_ARCH := 50 60 70 80 90 100 120
+ifeq ($(wildcard $(CUDA_BASE)/bin/nvcc),)
+  # CUDA platform not found
+  $(info Cannot find an NVIDIA CUDA installation at $(CUDA_BASE), the CUDA benchmarks will not be built.)
+  override CUDA_BASE :=
+else
+  # CUDA platform at $(CUDA_BASE)
+  $(info Using NVIDIA CUDA installation at $(CUDA_BASE), $(strip $(shell $(CUDA_BASE)/bin/nvcc --version | grep release | cut -d, -f2-)))
+  CUDA_CXX     := $(CUDA_BASE)/bin/nvcc
+  CUDA_LIBDIR   := $(CUDA_BASE)/lib64
+  # detect the architecture of the NVIDIA GPUs in the system
+  CUDA_DETECTED_ARCH := $(shell $(CUDA_BASE)/bin/__nvcc_device_query 2> /dev/null)
+  ifneq ($(CUDA_DETECTED_ARCH),)
+    CUDA_ARCH := $(CUDA_DETECTED_ARCH)
+  endif
+  CUDA_CXXFLAGS := $(COMMON_FLAGS) $(foreach ARCH,$(CUDA_ARCH),-gencode arch=compute_$(ARCH),code=[sm_$(ARCH),compute_$(ARCH)]) -Wno-deprecated-gpu-targets -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --prec-div true --prec-sqrt true --fmad true --expt-relaxed-constexpr --extended-lambda --generate-line-info --source-in-ptx --display-error-number --threads $(words $(CUDA_ARCH)) -ccbin $(CXX) --compiler-options $(GPU_FLAGS) '$(HOST_CXXFLAGS)' -I$(CUDA_BASE)/include
+  CUDA_LDFLAGS  := -L$(CUDA_LIBDIR) -L$(CUDA_LIBDIR)/stubs -lcudart -lcudadevrt -lnvidia-ml -Wl,-rpath,$(CUDA_LIBDIR) $(LDFLAGS)
+
+  # Make sure the benchmarks can find the CUDA libraries
+  export LD_LIBRARY_PATH := $(CUDA_LIBDIR):$(LD_LIBRARY_PATH)
+endif
+
+# ROCm
+ROCM_BASE := /opt/rocm
+# default to the list of all supported architectures
+ROCM_ARCH := gfx900 gfx906 gfx908 gfx90a gfx942 gfx1030 gfx1100 gfx1101 gfx1200 gfx1201
+ifeq ($(wildcard $(ROCM_BASE)/lib/libhsa-runtime64.so),)
+  # ROCm platform not found
+  $(info Cannot find an AMD ROCm installation at $(ROCM_BASE), the ROCm benchmarks will not be built.)
+  override ROCM_BASE :=
+else
+  # ROCm platform at $(ROCM_BASE)
+  $(info Using AMD ROCm installation at $(ROCM_BASE), version $(strip $(shell $(ROCM_BASE)/bin/hipcc --version | grep 'HIP version' | cut -d: -f2-)))
+  ROCM_LIBDIR := $(ROCM_BASE)/lib
+  # detect the architecture of the AMD GPUs in the system
+  ROCM_DETECTED_ARCH := $(shell $(ROCM_BASE)/lib/llvm/bin/amdgpu-arch 2> /dev/null | sort -u)
+  ifneq ($(ROCM_DETECTED_ARCH),)
+    ROCM_ARCH := $(ROCM_DETECTED_ARCH)
+  endif
+  ROCM_CXX     := $(ROCM_BASE)/bin/hipcc
+  ROCM_CXXFLAGS := $(GPU_FLAGS) $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) $(foreach ARCH,$(ROCM_ARCH),--offload-arch=$(ARCH)) -fhip-fp32-correctly-rounded-divide-sqrt --target=$(GCC_TARGET) --gcc-toolchain=$(GCC_TOOLCHAIN) -I$(ROCM_BASE)/include/hip
+  # ROCM_CXXFLAGS := $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) -Wno-option-ignored $(foreach ARCH,$(ROCM_ARCH),--offload-arch=$(ARCH)) -fhip-fp32-correctly-rounded-divide-sqrt --target=$(GCC_TARGET) --gcc-toolchain=$(GCC_TOOLCHAIN) -I$(ROCM_BASE)/include/hip
+  ROCM_LDFLAGS  := -L$(ROCM_LIBDIR) -lamdhip64 -lrocm_smi64 -Wl,-rpath,$(ROCM_LIBDIR) $(LDFLAGS)
+
+  # Make sure the benchmarks can find the ROCm libraries
+  export LD_LIBRARY_PATH := $(ROCM_LIBDIR):$(LD_LIBRARY_PATH)
+endif
+
+# Intel oneAPI
+# look for the oneAPI installation in
+#   - the directory specified by ONEAPI_BASE, if set; for example calling:
+#       make ONEAPI_BASE=/opt/intel/oneapi
+#   - the directory specified by ONEAPI_ROOT, if set; this is usually set by
+#       . /opt/intel/oneapi/setvars.sh
+#   - /opt/intel/oneapi; this is the default value
+
+# if ONEAPI_BASE is set and not empty, check if it points to a valid oneAPI installation
+ifneq ($(ONEAPI_BASE),)
+  ifneq ($(wildcard $(ONEAPI_BASE)/setvars.sh),)
+    # found Intel oneAPI at $(ONEAPI_BASE)
+    $(info Using Intel oneAPI installation at $(ONEAPI_BASE))
+  else
+    # Intel oneAPI not found at $(ONEAPI_BASE), set ONEAPI_BASE to an empty value
+    $(info Cannot find an Intel oneAPI installation at $(ONEAPI_BASE), the oneAPI benchmarks will not be built.)
+    override ONEAPI_BASE :=
+  endif
+endif
+
+# if ONEAPI_BASE is not set (not just empty) and ONEAPI_ROOT is set and not empty, check if it points to a valid oneAPI installation
+ifeq ($(origin ONEAPI_BASE), undefined)
+  ifdef ONEAPI_ROOT
+    ifneq ($(wildcard $(ONEAPI_ROOT)/setvars.sh),)
+      # found Intel oneAPI at $(ONEAPI_ROOT)
+      ONEAPI_BASE := $(ONEAPI_ROOT)
+      $(info Using Intel oneAPI installation at $(ONEAPI_BASE), version $(strip $(shell $(ONEAPI_BASE)/compiler/latest/bin/icpx --version | sed -n -e's#Intel(R) oneAPI DPC++/C++ Compiler##p')))
+    endif
+  endif
+endif
+
+# if ONEAPI_BASE is not set (not just empty), look for a valid oneAPI installation at /opt/intel/oneapi
+ifeq ($(origin ONEAPI_BASE), undefined)
+  ifneq ($(wildcard /opt/intel/oneapi/setvars.sh),)
+    # found Intel oneAPI at /opt/intel/oneapi
+    ONEAPI_BASE := /opt/intel/oneapi
+    $(info Using Intel oneAPI installation at $(ONEAPI_BASE))
+  endif
+endif
+
+# if ONEAPI_BASE is set and not empty, check if the environment has been setup
+ifneq ($(ONEAPI_BASE),)
+  ifeq ($(shell which sycl-ls 2> /dev/null),)
+    # Intel oneAPI environment not setup
+    $(info The Intel oneAPI environment has not been setup. Please run:$(newline)    . $(ONEAPI_BASE)/setvars.sh$(newline)before running make.$(newline)Alternatively, disable oneAPI detection setting ONEAPI_BASE to an empty value, for eample:$(newline)    make ONEAPI_BASE=$(newline))
+    override ONEAPI_BASE :=
+  endif
+endif
+ifneq ($(ONEAPI_BASE),)
+  SYCL_BASE         := $(ONEAPI_BASE)/compiler/latest
+  SYCL_LIBDIR       := $(SYCL_BASE)/lib
+  SYCL_CXX          := $(SYCL_BASE)/bin/icpx
+  SYCL_TARGETS      := spir64_x86_64 spir64
+  ifdef CUDA_BASE
+    ifneq ($(wildcard $(SYCL_LIBDIR)/libur_adapter_cuda.so),)
+      # Note: as of oneAPI 2025.2 icpx can target a single CUDA architecture.
+      # If the syntax
+      #   -fsycl-targets=nvptx64-nvidia-cuda -Xsycl-target-backend=nvptx64-nvidia-cuda --offload-arch=sm_80 -Xsycl-target-backend=nvptx64-nvidia-cuda --offload-arch=sm_90
+      # is used, the backend compiler is invoked only once for the first architecture (sm_80), and the others are ignored.
+      # If the sytnax
+      #   -fsycl-targets=nvidia_gpu_sm_80,nvidia_gpu_sm_90
+      # is used, the backend compiler is invoked multiple times, but always for the first architecture (sm_80).
+      # See https://github.com/intel/llvm/issues/16424 for some examples.
+      #SYCL_TARGETS    += $(foreach SM,$(CUDA_ARCH),nvidia_gpu_sm_$(SM))
+      # To avoid inconsistencies, we build the benchmarks only for the first CUDA architecture.
+      SYCL_TARGETS    += nvidia_gpu_sm_$(firstword $(CUDA_ARCH))
+      SYCL_CUDA_FLAGS := --cuda-path=$(CUDA_BASE)
+    endif
+  endif
+  ifdef ROCM_BASE
+    ifneq ($(wildcard $(SYCL_LIBDIR)/libur_adapter_hip.so),)
+      # Note: the same issue described above for NVIDIA GPUs applies to AMD GPUs
+      #SYCL_TARGETS    += $(foreach GFX,$(ROCM_ARCH),amd_gpu_$(GFX))
+      # To avoid inconsistencies, we build the benchmarks only for the first ROCm architecture.
+      SYCL_TARGETS    += amd_gpu_$(firstword $(ROCM_ARCH))
+      SYCL_ROCM_FLAGS := --rocm-path=$(ROCM_BASE)
+    endif
+  endif
+  SYCL_CXXFLAGS     := $(GPU_FLAGS) $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(CXXFLAGS)) -fsycl -fsycl-targets=$(subst $(space),$(comma),$(SYCL_TARGETS)) $(SYCL_CUDA_FLAGS) $(SYCL_ROCM_FLAGS) -fp-model=precise
+  SYCL_LDFLAGS      := $(LDFLAGS)
+
+  # Check for Intel GPU existence
+  #SYCL_LS := $(shell mktemp)
+  #$(shell which sycl-ls > /dev/null 2>&1 && sycl-ls --verbose 2> /dev/null > $(SYCL_LS))
+  #SYCL_GPU_TARGET := -fsycl-targets=$(shell echo $$(cat $(SYCL_LS) | grep Architecture | cut -d: -f2 | sort -u | grep intel_gpu) | tr ' ' ',')
+  #$(shell rm -f $(SYCL_LS))
+  #undefine SYCL_LS
+
+  # Enable double precision floating point emulation for Intel GPUs
+  # See https://github.com/intel/compute-runtime/blob/master/opencl/doc/FAQ.md#feature-double-precision-emulation-fp64
+  #export IGC_EnableDPEmulation := 1
+  #export OverrideDefaultFP64Settings := 1
+endif
+
+# xtd
+XTD_BASE := $(realpath $(dir $(realpath $(lastword $(MAKEFILE_LIST))))/..)
+$(info Using xtd library at $(XTD_BASE))
+# LIB_CFLAGS  := -I$(XTD_BASE)/include -I$(XTD_BASE)/benchmark
+LIB_CFLAGS  := -I$(XTD_BASE)/benchmark -I$(XTD_BASE)/include
+LIB_LDFLAGS :=
+
+# external libraries downloaded and installed locally
+EXTERNAL_BASE := $(XTD_BASE)/benchmark/external
+
+# external Catch2 library (v3 amalgamated)
+CATCH2_DIR     := $(EXTERNAL_BASE)/catch2
+CATCH2_HEADER  := $(CATCH2_DIR)/include/catch_amalgamated.hpp
+CATCH2_SRC     := $(CATCH2_DIR)/src/catch_amalgamated.cpp
+CATCH2_OBJ     := tmp/catch_amalgamated.o
+
+$(info Using Catch2 library at $(CATCH2_DIR))
+LIB_CFLAGS  += -I$(CATCH2_DIR)/include
+LIB_LDFLAGS +=
+
+.PHONY: external_catch2
+external_catch2: $(CATCH2_HEADER) $(CATCH2_SRC)
+
+$(CATCH2_HEADER):
+	mkdir -p $(dir $@)
+	curl -s -S -L https://github.com/catchorg/Catch2/releases/download/v3.5.2/catch_amalgamated.hpp -o $@
+
+$(CATCH2_SRC):
+	mkdir -p $(dir $@)
+	curl -s -S -L https://github.com/catchorg/Catch2/releases/download/v3.5.2/catch_amalgamated.cpp -o $@
+
+# Use the main function provided by Catch2
+# $(CATCH2_OBJ): $(CATCH2_SRC) | prereq
+# 	$(CXX) $(CXXFLAGS) $(LIB_CFLAGS) -DCATCH_AMALGAMATED_CUSTOM_MAIN -c $< -o $@
+$(CATCH2_OBJ): $(CATCH2_SRC) | prereq
+	$(CXX) $(CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
+
+bin:
+	@mkdir -p bin
+
+tmp:
+	@mkdir -p tmp
+
+.PHONY: prereq
+prereq: external_catch2 bin tmp
+
+$(info -------------------------------------------------------------------------------)
+
+# xtd benchmarks
+MODULES := algorithm math stdlib
+SUBDIRS := $(foreach MODULE,$(MODULES),$(wildcard $(XTD_BASE)/benchmark/src/$(MODULE)/*/))
+TARGETS := $(foreach P,$(patsubst %/,%,$(SUBDIRS)),$(notdir $(patsubst %/,%,$(dir $P)))/$(notdir $P))
+$(info Benchmarks: $(TARGETS))
+$(info -------------------------------------------------------------------------------)
+
+# CPU benchmarks
+.PHONY: cpu
+cpu: build_cpu run_cpu
+
+build: build_cpu
+
+run: run_cpu
+
+CPU_OBJ := $(foreach TARGET,$(TARGETS),tmp/$(TARGET)_t.cc.o)
+
+tmp/main.cc.o: common/cpu/main.cc | prereq
+	$(CXX) $(CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
+
+bin/benchmark_cpu: tmp/main.cc.o $(CPU_OBJ) $(CATCH2_OBJ) | prereq
+	$(CXX) $^ $(CPU_LDFLAGS) $(LIB_LDFLAGS) -o $@
+
+.PHONY: build_cpu
+build_cpu: bin/benchmark_cpu
+
+.PHONY: run_cpu
+run_cpu: bin/benchmark_cpu
+	$<
+
+.PHONY: clean_cpu
+clean_cpu:
+	rm -f tmp/*.cc.o bin/benchmark_cpu
+
+# CUDA benchmarks
+ifdef CUDA_BASE
+.PHONY: cuda
+cuda: build_cuda run_cuda
+
+build: build_cuda
+
+run: run_cuda
+
+CUDA_OBJ := $(foreach TARGET,$(TARGETS),tmp/$(TARGET)_t.cu.o)
+
+tmp/main.cu.o: common/cuda/main.cu | prereq
+	$(CUDA_CXX) $(CUDA_CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
+
+bin/benchmark_cuda: tmp/main.cu.o $(CUDA_OBJ) $(CATCH2_OBJ) | prereq
+	$(CXX) $^ $(CUDA_LDFLAGS) $(LIB_LDFLAGS) -o $@
+
+.PHONY: build_cuda
+build_cuda: bin/benchmark_cuda
+
+.PHONY: run_cuda
+run_cuda: bin/benchmark_cuda
+	$<
+
+.PHONY: clean_cuda
+clean_cuda:
+	rm -f tmp/*.cu.o bin/benchmark_cuda
+endif
+
+# HIP/ROCm benchmarks
+ifdef ROCM_BASE
+.PHONY: hip
+hip: build_hip run_hip
+
+build: build_hip
+
+run: run_hip
+
+ROCM_OBJ := $(foreach TARGET,$(TARGETS),tmp/$(TARGET)_t.hip.cc.o)
+
+tmp/main.hip.cc.o: common/hip/main.hip.cc | prereq
+	$(ROCM_CXX) $(ROCM_CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
+
+bin/benchmark_hip: tmp/main.hip.cc.o $(ROCM_OBJ) $(CATCH2_OBJ) | prereq
+	$(CXX) $^ $(ROCM_LDFLAGS) $(LIB_LDFLAGS) -o $@
+
+.PHONY: build_hip
+build_hip: bin/benchmark_hip
+
+.PHONY: run_hip
+run_hip: bin/benchmark_hip
+	$<
+
+.PHONY: clean_hip
+clean_hip:
+	rm -f tmp/*.hip.cc.o bin/benchmark_hip
+endif
+
+# oneAPI benchmarks
+ifdef ONEAPI_BASE
+.PHONY: sycl
+sycl: build_sycl run_sycl
+
+build: build_sycl
+
+run: run_sycl
+
+SYCL_OBJ := $(foreach TARGET,$(TARGETS),tmp/$(TARGET)_t.sycl.cc.o)
+
+tmp/main.sycl.cc.o: common/sycl/main.sycl.cc | prereq
+	$(SYCL_CXX) $(SYCL_CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
+
+# SYCL programs must be linked with the Intel® oneAPI DPC++/C++ Compiler
+bin/benchmark_sycl: tmp/main.sycl.cc.o $(SYCL_OBJ) $(CATCH2_OBJ) | prereq
+	$(SYCL_CXX) $(SYCL_CXXFLAGS) $^ $(SYCL_LDFLAGS) $(LIB_LDFLAGS) -o $@
+
+.PHONY: build_sycl
+build_sycl: bin/benchmark_sycl
+
+.PHONY: run_sycl
+run_sycl: bin/benchmark_sycl
+	$<
+
+.PHONY: clean_sycl
+clean_sycl:
+	rm -f tmp/*.sycl.cc.o bin/benchmark_sycl
+endif
+
+
+define BENCHMARK_template
+# CPU benchmarks
+tmp/$(1)_t.cc.o: src/$(1)/$(notdir $(1))_t.cc | prereq
+	@mkdir -p tmp/$(dir $(1))
+	$(CXX) $(CXXFLAGS) $(LIB_CFLAGS) -c $$< -o $$@
+
+# CUDA benchmarks
+ifdef CUDA_BASE
+tmp/$(1)_t.cu.o: src/$(1)/$(notdir $(1))_t.cu | prereq
+	@mkdir -p tmp/$(dir $(1))
+	$(CUDA_CXX) $(CUDA_CXXFLAGS) $(LIB_CFLAGS) -c $$< -o $$@
+endif
+
+# HIP/ROCm benchmarks
+ifdef ROCM_BASE
+tmp/$(1)_t.hip.cc.o: src/$(1)/$(notdir $(1))_t.hip.cc | prereq
+	@mkdir -p tmp/$(dir $(1))
+	$(ROCM_CXX) $(ROCM_CXXFLAGS) $(LIB_CFLAGS) -c $$< -o $$@
+endif
+
+# oneAPI benchmarks
+ifdef ONEAPI_BASE
+tmp/$(1)_t.sycl.cc.o: src/$(1)/$(notdir $(1))_t.sycl.cc | prereq
+	@mkdir -p tmp/$(dir $(1))
+	$(SYCL_CXX) $(SYCL_CXXFLAGS) $(LIB_CFLAGS) -c $$< -o $$@
+endif
+endef
+
+$(foreach TARGET,$(TARGETS),$(eval $(call BENCHMARK_template,$(TARGET))))

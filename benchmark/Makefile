@@ -71,7 +71,7 @@ else
   ifneq ($(CUDA_DETECTED_ARCH),)
     CUDA_ARCH := $(CUDA_DETECTED_ARCH)
   endif
-  CUDA_CXXFLAGS := $(COMMON_FLAGS) $(foreach ARCH,$(CUDA_ARCH),-gencode arch=compute_$(ARCH),code=[sm_$(ARCH),compute_$(ARCH)]) -Wno-deprecated-gpu-targets -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --prec-div true --prec-sqrt true --fmad true --expt-relaxed-constexpr --extended-lambda --generate-line-info --source-in-ptx --display-error-number --threads $(words $(CUDA_ARCH)) -ccbin $(CXX) --compiler-options $(GPU_FLAGS) '$(HOST_CXXFLAGS)' -I$(CUDA_BASE)/include
+  CUDA_CXXFLAGS := $(GPU_FLAGS) $(COMMON_FLAGS) $(foreach ARCH,$(CUDA_ARCH),-gencode arch=compute_$(ARCH),code=[sm_$(ARCH),compute_$(ARCH)]) -Wno-deprecated-gpu-targets -Xcudafe --diag_suppress=esa_on_defaulted_function_ignored --prec-div true --prec-sqrt true --fmad true --expt-relaxed-constexpr --extended-lambda --generate-line-info --source-in-ptx --display-error-number --threads $(words $(CUDA_ARCH)) -ccbin $(CXX) --compiler-options '$(HOST_CXXFLAGS)' -I$(CUDA_BASE)/include
   CUDA_LDFLAGS  := -L$(CUDA_LIBDIR) -L$(CUDA_LIBDIR)/stubs -lcudart -lcudadevrt -lnvidia-ml -Wl,-rpath,$(CUDA_LIBDIR) $(LDFLAGS)
 
   # Make sure the benchmarks can find the CUDA libraries
@@ -263,10 +263,7 @@ run: run_cpu
 
 CPU_OBJ := $(foreach TARGET,$(TARGETS),tmp/$(TARGET)_t.cc.o)
 
-tmp/main.cc.o: common/cpu/main.cc | prereq
-	$(CXX) $(CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
-
-bin/benchmark_cpu: tmp/main.cc.o $(CPU_OBJ) $(CATCH2_OBJ) | prereq
+bin/benchmark_cpu: $(CPU_OBJ) $(CATCH2_OBJ) | prereq
 	$(CXX) $^ $(CPU_LDFLAGS) $(LIB_LDFLAGS) -o $@
 
 .PHONY: build_cpu
@@ -291,10 +288,7 @@ run: run_cuda
 
 CUDA_OBJ := $(foreach TARGET,$(TARGETS),tmp/$(TARGET)_t.cu.o)
 
-tmp/main.cu.o: common/cuda/main.cu | prereq
-	$(CUDA_CXX) $(CUDA_CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
-
-bin/benchmark_cuda: tmp/main.cu.o $(CUDA_OBJ) $(CATCH2_OBJ) | prereq
+bin/benchmark_cuda: $(CUDA_OBJ) $(CATCH2_OBJ) | prereq
 	$(CXX) $^ $(CUDA_LDFLAGS) $(LIB_LDFLAGS) -o $@
 
 .PHONY: build_cuda
@@ -320,10 +314,7 @@ run: run_hip
 
 ROCM_OBJ := $(foreach TARGET,$(TARGETS),tmp/$(TARGET)_t.hip.cc.o)
 
-tmp/main.hip.cc.o: common/hip/main.hip.cc | prereq
-	$(ROCM_CXX) $(ROCM_CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
-
-bin/benchmark_hip: tmp/main.hip.cc.o $(ROCM_OBJ) $(CATCH2_OBJ) | prereq
+bin/benchmark_hip: $(ROCM_OBJ) $(CATCH2_OBJ) | prereq
 	$(CXX) $^ $(ROCM_LDFLAGS) $(LIB_LDFLAGS) -o $@
 
 .PHONY: build_hip
@@ -349,11 +340,7 @@ run: run_sycl
 
 SYCL_OBJ := $(foreach TARGET,$(TARGETS),tmp/$(TARGET)_t.sycl.cc.o)
 
-tmp/main.sycl.cc.o: common/sycl/main.sycl.cc | prereq
-	$(SYCL_CXX) $(SYCL_CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
-
-# SYCL programs must be linked with the Intel® oneAPI DPC++/C++ Compiler
-bin/benchmark_sycl: tmp/main.sycl.cc.o $(SYCL_OBJ) $(CATCH2_OBJ) | prereq
+bin/benchmark_sycl: $(SYCL_OBJ) $(CATCH2_OBJ) | prereq
 	$(SYCL_CXX) $(SYCL_CXXFLAGS) $^ $(SYCL_LDFLAGS) $(LIB_LDFLAGS) -o $@
 
 .PHONY: build_sycl

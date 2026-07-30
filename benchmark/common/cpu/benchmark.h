@@ -19,8 +19,8 @@
 #include "xtd/concepts.h"
 
 // benchmark header
-#include "common/cpu/inputs.h"
 #include "common/halton.h"
+#include "common/cpu/inputs.h"
 
 namespace test::cpu {
 
@@ -75,7 +75,6 @@ namespace test::cpu {
     (void)device;
   }
 
-
   template <xtd::floating_point ResultType,
             typename InputType,
             ResultType (*XtdFunc)(InputType, InputType)>
@@ -98,4 +97,4 @@ namespace test::cpu {
     (void)device;
   }
 
-}  // namespace benchmark::cpu
+}  // namespace test::cpu

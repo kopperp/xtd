@@ -202,17 +202,55 @@ LIB_LDFLAGS :=
 EXTERNAL_BASE := $(XTD_BASE)/test/external
 
 # external Catch2 library
-CATCH2_INCLUDE := $(EXTERNAL_BASE)/catch2/include/catch.hpp
+CATCH2_VERSION  := v3.15.3
+CATCH2_DIR      := $(EXTERNAL_BASE)/catch2
+CATCH2_SRC_DIR  := $(CATCH2_DIR)/src/catch2
+CATCH2_INC_DIR  := $(CATCH2_DIR)/include
+CATCH2_CFLAGS   += -DCATCH_CONFIG_NO_ANDROID_LOGWRITE -DCATCH_CONFIG_NO_COLOUR_WIN32 -DCATCH_CONFIG_NO_WINDOWS_SEH -DCATCH_CONFIG_NO_EXPERIMENTAL_STATIC_ANALYSIS_SUPPORT -DCATCH_CONFIG_NO_WCHAR
 $(info Using Catch2 library at $(EXTERNAL_BASE)/catch2)
-LIB_CFLAGS  += -I$(patsubst %/,%,$(dir $(CATCH2_INCLUDE)))
-LIB_LDFLAGS +=
+
+# Technically, static libraries are not needed but they significantly reduce build times
+CATCH2_LIB      := tmp/catch2/internal/libCatch2.a
+CATCH2_MAIN_LIB := tmp/catch2/internal/libCatch2Main.a
+
+LIB_CFLAGS      += -I$(CATCH2_INC_DIR)
+LIB_LDFLAGS     += $(CATCH2_MAIN_LIB) $(CATCH2_LIB)
 
 .PHONY: external_catch2
-external_catch2: $(CATCH2_INCLUDE)
+external_catch2: $(CATCH2_LIB) $(CATCH2_MAIN_LIB)
 
-$(CATCH2_INCLUDE):
-	mkdir -p $(dir $@)
-	curl -s -S -L https://github.com/catchorg/Catch2/releases/download/v2.13.10/catch.hpp -o $@
+$(CATCH2_INC_DIR)/catch2/catch_user_config.hpp:
+	mkdir -p $(EXTERNAL_BASE)
+	curl -s -S -L https://github.com/catchorg/Catch2/archive/refs/tags/$(CATCH2_VERSION).tar.gz | tar xz -C $(EXTERNAL_BASE)
+	mv $(EXTERNAL_BASE)/Catch2-$(subst v,,$(CATCH2_VERSION)) $(CATCH2_DIR)
+  # This just simplifies header includes
+	mkdir -p $(CATCH2_INC_DIR)
+	ln -snf $(CATCH2_SRC_DIR) $(CATCH2_INC_DIR)/catch2
+	@echo '#ifndef CATCH_USER_CONFIG_HPP_INCLUDED' > $@
+	@echo '#define CATCH_USER_CONFIG_HPP_INCLUDED' >> $@
+	@echo '#endif' >> $@
+
+.PHONY: external_catch2
+external_catch2: $(CATCH2_INC_DIR)/catch2/catch_user_config.hpp
+	$(MAKE) build_catch2_libs
+
+.PHONY: build_catch2_libs
+build_catch2_libs:
+	$(eval CORE_SRCS := $(filter-out $(MAIN_SRC),$(shell find $(CATCH2_SRC_DIR) -type f -name '*.cpp' 2>/dev/null)))
+	$(eval CORE_OBJS := $(patsubst $(CATCH2_SRC_DIR)/%.cpp,tmp/catch2/%.o,$(CORE_SRCS)))
+	$(MAKE) $(CATCH2_LIB) $(CATCH2_MAIN_LIB) CORE_OBJS="$(CORE_OBJS)"
+
+$(CATCH2_LIB): $(CORE_OBJS)
+	@mkdir -p $(dir $@)
+	$(AR) rcs $@ $^
+
+$(CATCH2_MAIN_LIB): $(MAIN_OBJ)
+	@mkdir -p $(dir $@)
+	$(AR) rcs $@ $<
+
+tmp/catch2/%.o: $(CATCH2_SRC_DIR)/%.cpp $(CATCH2_INC_DIR)/catch2/catch_user_config.hpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -I$(CATCH2_INC_DIR) -c $< -o $@
 
 # external mpfr::real library
 MPFR_REAL_INCLUDE := $(EXTERNAL_BASE)/mpfr_real_v0.0.9-alpha/real.hpp
@@ -255,10 +293,7 @@ run: run_cpu
 
 CPU_OBJ := $(foreach TARGET,$(TARGETS),tmp/$(TARGET)_t.cc.o)
 
-tmp/main.cc.o: common/cpu/main.cc | prereq
-	$(CXX) $(CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
-
-bin/test_cpu: tmp/main.cc.o $(CPU_OBJ) | prereq
+bin/test_cpu: $(CPU_OBJ) | prereq
 	$(CXX) $^ $(CPU_LDFLAGS) $(LIB_LDFLAGS) -o $@
 
 .PHONY: build_cpu
@@ -286,7 +321,7 @@ CUDA_OBJ := $(foreach TARGET,$(TARGETS),tmp/$(TARGET)_t.cu.o)
 tmp/main.cu.o: common/cuda/main.cu | prereq
 	$(CUDA_CXX) $(CUDA_CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
 
-bin/test_cuda: tmp/main.cu.o $(CUDA_OBJ) | prereq
+bin/test_cuda: $(CUDA_OBJ) | prereq
 	$(CXX) $^ $(CUDA_LDFLAGS) $(LIB_LDFLAGS) -o $@
 
 .PHONY: build_cuda
@@ -315,7 +350,7 @@ ROCM_OBJ := $(foreach TARGET,$(TARGETS),tmp/$(TARGET)_t.hip.cc.o)
 tmp/main.hip.cc.o: common/hip/main.hip.cc | prereq
 	$(ROCM_CXX) $(ROCM_CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
 
-bin/test_hip: tmp/main.hip.cc.o $(ROCM_OBJ) | prereq
+bin/test_hip: $(ROCM_OBJ) | prereq
 	$(CXX) $^ $(ROCM_LDFLAGS) $(LIB_LDFLAGS) -o $@
 
 .PHONY: build_hip
@@ -345,7 +380,7 @@ tmp/main.sycl.cc.o: common/sycl/main.sycl.cc | prereq
 	$(SYCL_CXX) $(SYCL_CXXFLAGS) $(LIB_CFLAGS) -c $< -o $@
 
 # SYCL programs must be linked with the Intel® oneAPI DPC++/C++ Compiler
-bin/test_sycl: tmp/main.sycl.cc.o $(SYCL_OBJ) | prereq
+bin/test_sycl: $(SYCL_OBJ) | prereq
 	$(SYCL_CXX) $(SYCL_CXXFLAGS) $^ $(SYCL_LDFLAGS) $(LIB_LDFLAGS) -o $@
 
 .PHONY: build_sycl

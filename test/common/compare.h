@@ -8,10 +8,12 @@
 
 // C++ standard headers
 #include <concepts>
+#include <cmath>
 
 // Catch2 headers
 #define CATCH_CONFIG_NO_POSIX_SIGNALS
-#include <catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 template <std::floating_point T>
 void compare(T result, T reference, int ulps = 0) {

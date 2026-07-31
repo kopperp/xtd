@@ -9,7 +9,7 @@
 #include <vector>
 
 // Catch2 headers
-#include <catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 // xtd headers
 #include "xtd/math/log2.h"

@@ -6,7 +6,7 @@
 
 // Catch2 headers
 #define CATCH_CONFIG_NO_POSIX_SIGNALS
-#include <catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 // xtd headers
 #include "xtd/math/floor.h"

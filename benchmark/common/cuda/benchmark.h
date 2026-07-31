@@ -26,6 +26,11 @@
 #include "common/cuda/device.h"
 #include "common/cuda/inputs.h"
 
+// constexpr int blocks  = 8;
+// constexpr int threads = 64;
+constexpr int blocks  = 1;
+constexpr int threads = 1;
+
 namespace test::cuda {
 
   template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType)>
@@ -90,13 +95,13 @@ namespace test::cuda {
     CUDA_CHECK(cudaEventCreate(&stop));
 
     // warmup launch
-    kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(values.data(), result, size);
+    kernel<ResultType, InputType, XtdFunc><<<blocks, threads, 0, queue>>>(values.data(), result, size);
 
     // execute the xtd function on the GPU
     BENCHMARK_ADVANCED(std::string(Catch::getResultCapture().getCurrentTestName()))(Catch::Benchmark::Chronometer meter) {
       meter.measure([&] {
         CUDA_CHECK(cudaEventRecord(start, queue));
-        kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(values.data(), result, size);
+        kernel<ResultType, InputType, XtdFunc><<<blocks, threads, 0, queue>>>(values.data(), result, size);
         CUDA_CHECK(cudaEventRecord(stop, queue));
         CUDA_CHECK(cudaEventSynchronize(stop));
 
@@ -132,13 +137,13 @@ namespace test::cuda {
     CUDA_CHECK(cudaEventCreate(&stop));
 
     // warmup launch
-    kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(values.data(), result, size);
+    kernel<ResultType, InputType, XtdFunc><<<blocks, threads, 0, queue>>>(values.data(), result, size);
 
     // execute the xtd function on the GPU
     BENCHMARK_ADVANCED(std::string(Catch::getResultCapture().getCurrentTestName()))(Catch::Benchmark::Chronometer meter) {
       meter.measure([&] {
         CUDA_CHECK(cudaEventRecord(start, queue));
-        kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(values.data(), result, size);
+        kernel<ResultType, InputType, XtdFunc><<<blocks, threads, 0, queue>>>(values.data(), result, size);
         CUDA_CHECK(cudaEventRecord(stop, queue));
         CUDA_CHECK(cudaEventSynchronize(stop));
 
@@ -184,13 +189,13 @@ namespace test::cuda {
     CUDA_CHECK(cudaEventCreate(&stop));
 
     // warmup launch
-    kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(d_input_pairs, result, size);
+    kernel<ResultType, InputType, XtdFunc><<<blocks, threads, 0, queue>>>(d_input_pairs, result, size);
 
     // execute the xtd function on the GPU
     BENCHMARK_ADVANCED(std::string(Catch::getResultCapture().getCurrentTestName()))(Catch::Benchmark::Chronometer meter) {
       meter.measure([&] {
         CUDA_CHECK(cudaEventRecord(start, queue));
-        kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(d_input_pairs, result, size);
+        kernel<ResultType, InputType, XtdFunc><<<blocks, threads, 0, queue>>>(d_input_pairs, result, size);
         CUDA_CHECK(cudaEventRecord(stop, queue));
         CUDA_CHECK(cudaEventSynchronize(stop));
 

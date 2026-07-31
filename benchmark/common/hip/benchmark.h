@@ -26,6 +26,11 @@
 #include "common/hip/hip_check.h"
 #include "common/hip/inputs.h"
 
+// constexpr int blocks  = 8;
+// constexpr int threads = 64;
+constexpr int blocks  = 1;
+constexpr int threads = 1;
+
 namespace test::hip {
 
   template <typename ResultType, typename InputType, ResultType (*XtdFunc)(InputType)>
@@ -90,13 +95,13 @@ namespace test::hip {
     HIP_CHECK(hipEventCreate(&stop));
 
     // warmup launch
-    kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(values.data(), result, size);
+    kernel<ResultType, InputType, XtdFunc><<<blocks, threads, 0, queue>>>(values.data(), result, size);
 
     // execute the xtd function on the GPU
     BENCHMARK_ADVANCED(std::string(Catch::getResultCapture().getCurrentTestName()))(Catch::Benchmark::Chronometer meter) {
       meter.measure([&] {
         HIP_CHECK(hipEventRecord(start, queue));
-        kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(values.data(), result, size);
+        kernel<ResultType, InputType, XtdFunc><<<blocks, threads, 0, queue>>>(values.data(), result, size);
         HIP_CHECK(hipEventRecord(stop, queue));
         HIP_CHECK(hipEventSynchronize(stop));
 
@@ -132,13 +137,13 @@ namespace test::hip {
     HIP_CHECK(hipEventCreate(&stop));
 
     // warmup launch
-    kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(values.data(), result, size);
+    kernel<ResultType, InputType, XtdFunc><<<blocks, threads, 0, queue>>>(values.data(), result, size);
 
     // execute the xtd function on the GPU
     BENCHMARK_ADVANCED(std::string(Catch::getResultCapture().getCurrentTestName()))(Catch::Benchmark::Chronometer meter) {
       meter.measure([&] {
         HIP_CHECK(hipEventRecord(start, queue));
-        kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(values.data(), result, size);
+        kernel<ResultType, InputType, XtdFunc><<<blocks, threads, 0, queue>>>(values.data(), result, size);
         HIP_CHECK(hipEventRecord(stop, queue));
         HIP_CHECK(hipEventSynchronize(stop));
 
@@ -184,13 +189,13 @@ namespace test::hip {
     HIP_CHECK(hipEventCreate(&stop));
 
     // warmup launch
-    kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(d_input_pairs, result, size);
+    kernel<ResultType, InputType, XtdFunc><<<blocks, threads, 0, queue>>>(d_input_pairs, result, size);
 
     // execute the xtd function on the GPU
     BENCHMARK_ADVANCED(std::string(Catch::getResultCapture().getCurrentTestName()))(Catch::Benchmark::Chronometer meter) {
       meter.measure([&] {
         HIP_CHECK(hipEventRecord(start, queue));
-        kernel<ResultType, InputType, XtdFunc><<<8, 64, 0, queue>>>(d_input_pairs, result, size);
+        kernel<ResultType, InputType, XtdFunc><<<blocks, threads, 0, queue>>>(d_input_pairs, result, size);
         HIP_CHECK(hipEventRecord(stop, queue));
         HIP_CHECK(hipEventSynchronize(stop));
 

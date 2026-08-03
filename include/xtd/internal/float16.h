@@ -50,16 +50,8 @@ public:
         // standard C/C++ code
         : bits_(std::bit_cast<uint16_t>(static_cast<std::float16_t>(f))) {}
 #else
-    {   // Helper union to for bitwise re-interpret
-        union float32 {
-            std::uint32_t bits_;
-            float float_;
-        };
-
-        float32 f32{};
-        f32.float_ = f;
-        bits_ = float_to_half(f32.bits_);
-    }
+        // c++20 and below fallback
+        : bits_(float_to_half(std::bit_cast<std::uint32_t>(f))) {}
 #endif
 #endif
 
@@ -81,15 +73,8 @@ public:
         // standard C/C++ code
         return static_cast<float>(std::bit_cast<std::float16_t>(bits_));
 #else
-        // Helper union to for bitwise re-interpret
-        union float32 {
-            std::uint32_t bits_;
-            float float_;
-        };
-
-        float32 f32{};
-        f32.bits_ = half_to_float(bits_);
-        return f32.float_;
+        // c++20 and below fallback
+        return std::bit_cast<float>(half_to_float(bits_));
 #endif
 #endif
     }

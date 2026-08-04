@@ -25,6 +25,18 @@ namespace xtd {
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
     return sycl::cosh(arg);
+#elif XTD_HAS_STDFLOAT16
+    if (std::is_constant_evaluated()) {
+      return static_cast<float16>(std::cosh(static_cast<float>(arg)));
+    } else {
+#if defined(__clang__) && __has_builtin(__builtin_coshf16) && defined(__AVX512FP16__)
+      return __builtin_coshf16(std::bit_cast<std::float16_t>(arg));
+#elif defined(__clang__)
+      return __builtin_coshf(static_cast<float>(arg));
+#else
+      return std::cosh(static_cast<float>(arg));
+#endif
+    }
 #else
     // standard C/C++ code
     return ::coshf(arg);

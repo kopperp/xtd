@@ -41,15 +41,24 @@ HOST_CXXFLAGS := -march=native -Wall -Wextra -Werror -Wno-unused-variable -Wno-u
 # Compiler flags supported by GCC but not by the LLVM-based compilers (clang, hipcc, icpx, etc.)
 LLVM_UNSUPPORTED_CXXFLAGS := --param vect-max-version-for-alias-checks=50 -Werror=format-contains-nul -Wno-non-template-friend -Werror=return-local-addr -Werror=unused-but-set-variable
 
-# gcc
-CXX           := g++
-GCC_TOOLCHAIN := $(abspath $(dir $(shell which $(CXX)))/..)
-GCC_TARGET    := $(shell $(CXX) -dumpmachine)
-# CXXFLAGS      := $(COMMON_FLAGS) $(HOST_CXXFLAGS) -fsanitize=address
-# LDFLAGS       := $(COMMON_FLAGS) -fsanitize=address
-CXXFLAGS      := $(COMMON_FLAGS) $(HOST_CXXFLAGS)
+# Default compiler configuration
+USE_CLANG ?= 0
+
+ifeq ($(USE_CLANG),1)
+	# clang
+  CXX := clang++
+  CXXFLAGS := $(filter-out $(LLVM_UNSUPPORTED_CXXFLAGS),$(COMMON_FLAGS) $(CPU_FLAGS) $(HOST_CXXFLAGS))
+else
+	# gcc
+  CXX := g++
+  CXXFLAGS := $(COMMON_FLAGS) $(CPU_FLAGS) $(HOST_CXXFLAGS)
+endif
 LDFLAGS       := $(COMMON_FLAGS)
-$(info Using $(CXX) host compiler installation at $(GCC_TOOLCHAIN) for target $(GCC_TARGET))
+CPU_LDFLAGS   := -lm
+
+CXX_TOOLCHAIN := $(abspath $(dir $(shell which $(CXX)))/..)
+CXX_TARGET    := $(shell $(CXX) -dumpmachine)
+$(info Using $(CXX) host compiler installation at $(CXX_TOOLCHAIN) for target $(CXX_TARGET))
 
 # CUDA
 CUDA_BASE := /usr/local/cuda
@@ -150,6 +159,7 @@ ifneq ($(ONEAPI_BASE),)
     override ONEAPI_BASE :=
   endif
 endif
+
 ifneq ($(ONEAPI_BASE),)
   SYCL_BASE         := $(ONEAPI_BASE)/compiler/latest
   SYCL_LIBDIR       := $(SYCL_BASE)/lib

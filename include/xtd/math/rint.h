@@ -25,7 +25,17 @@ namespace xtd {
     // SYCL device code
     return sycl::half_precision::rint(arg);
 #elif XTD_HAS_STDFLOAT16
-    return std::rint(std::bit_cast<std::float16_t>(arg));
+    if (std::is_constant_evaluated()) {
+      return static_cast<float16>(std::rint(static_cast<float>(arg)));
+    } else {
+#if defined(__clang__) && __has_builtin(__builtin_rintf16) && defined(__AVX512FP16__)
+      return __builtin_rintf16(std::bit_cast<std::float16_t>(arg));
+#elif defined(__clang__)
+      return __builtin_rintf(static_cast<float>(arg));
+#else
+      return std::rint(static_cast<float>(arg));
+#endif
+    }
 #else
     // standard C/C++ code
     return float16(std::rint(static_cast<float_t>(arg)));

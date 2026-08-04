@@ -16,14 +16,14 @@
 #define __FLT16_MIN_EXP__ (-13)
 #define __FLT16_MAX_10_EXP__ 4
 #define __FLT16_DECIMAL_DIG__ 5
-#define __FLT16_DENORM_MIN__ 5.96046447753906250000000000000000000e-8F16
+#define __FLT16_DENORM_MIN__ 5.96046447753906250000000000000000000e-8f
 #define __FLT16_MIN_10_EXP__ (-4)
 #define __FLT16_IS_IEC_60559__ 1
-#define __FLT16_MIN__ 6.10351562500000000000000000000000000e-5F16
+#define __FLT16_MIN__ 6.10351562500000000000000000000000000e-5f
 #define __FLT16_MAX_EXP__ 16
-#define __FLT16_EPSILON__ 9.76562500000000000000000000000000000e-4F16
-#define __FLT16_NORM_MAX__ 6.55040000000000000000000000000000000e+4F16
-#define __FLT16_MAX__ 6.55040000000000000000000000000000000e+4F16
+#define __FLT16_EPSILON__ 9.76562500000000000000000000000000000e-4f
+#define __FLT16_NORM_MAX__ 6.55040000000000000000000000000000000e+4f
+#define __FLT16_MAX__ 6.55040000000000000000000000000000000e+4f
 #define __FLT16_HAS_INFINITY__ 1
 #define __FLT16_HAS_DENORM__ 1
 #define __FLT16_MANT_DIG__ 11
@@ -47,13 +47,11 @@ namespace std {
     struct numeric_limits<float16>
     {
       static constexpr bool is_specialized = true;
-
-      static constexpr float16 min() noexcept { return __FLT16_MIN__; }
-
-      static constexpr float16 max() noexcept { return __FLT16_MAX__; }
+      static constexpr float16 min() noexcept { return static_cast<float>(__FLT16_MIN__); }
+      static constexpr float16 max() noexcept { return static_cast<float>(__FLT16_MAX__); }
 
 #if __cplusplus >= 201103L
-      static constexpr float16 lowest() noexcept { return -__FLT16_MAX__; }
+      static constexpr float16 lowest() noexcept { return static_cast<float>(-__FLT16_MAX__); }
 #endif
 
       static constexpr int digits = __FLT16_MANT_DIG__;
@@ -71,7 +69,7 @@ namespace std {
       static constexpr int radix = __FLT_RADIX__;
 
       static constexpr float16
-      epsilon() noexcept { return __FLT16_EPSILON__; }
+      epsilon() noexcept { return static_cast<float>(__FLT16_EPSILON__); }
 
       static constexpr float16 round_error() noexcept { return std::bit_cast<float16>(static_cast<uint16_t>(0.5)); }
 
@@ -92,7 +90,7 @@ namespace std {
       static constexpr float16 infinity() noexcept { return std::bit_cast<float16>(static_cast<uint16_t>(0x7C00)); }
       static constexpr float16 quiet_NaN() noexcept { return std::bit_cast<float16>(static_cast<uint16_t>(0x7E00)); }
       static constexpr float16 signaling_NaN() noexcept { return std::bit_cast<float16>(static_cast<uint16_t>(0x7D00)); }
-      static constexpr float16 denorm_min() noexcept { return __FLT16_DENORM_MIN__; }
+      static constexpr float16 denorm_min() noexcept { return static_cast<float>(__FLT16_DENORM_MIN__); }
 
       static constexpr bool is_iec559 = has_infinity && has_quiet_NaN && has_denorm == denorm_present;
       static constexpr bool is_bounded = true;

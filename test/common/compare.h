@@ -15,14 +15,22 @@
 #define CATCH_CONFIG_NO_POSIX_SIGNALS
 #include <catch.hpp>
 
+namespace detail {
+template <typename T>
+constexpr auto to_standard(T val) {
+  if constexpr (std::floating_point<decltype(val)>) { return val; }
+  else { return static_cast<float>(val); }
+}
+} // namespace detail
+
 template <xtd::floating_point T>
 void compare(T result, T reference, int ulps = 0) {
-  switch (std::fpclassify(reference)) {
+  switch (std::fpclassify(detail::to_standard(reference))) {
     case FP_INFINITE:
-      CHECK(std::isinf(result));
+      CHECK(std::isinf(detail::to_standard(result)));
       break;
     case FP_NAN:
-      CHECK(std::isnan(result));
+      CHECK(std::isnan(detail::to_standard(result)));
       break;
     case FP_ZERO:
       // Catch::Matchers::WithinULP does not handle properly the comparison of denormals with zero

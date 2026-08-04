@@ -33,7 +33,7 @@ public:
     //     : bits_(raw_bits) {}
 
     /* ========================================================================
-     * CONSTRUCTOR FROM FLOAT
+     * CONSTRUCTOR
      * ===================================================================== */
     XTD_DEVICE_FUNCTION constexpr float16(float f) noexcept
 #if defined(XTD_TARGET_CUDA)
@@ -46,7 +46,7 @@ public:
         // SYCL device code
         : bits_(sycl::half2ushort_rn(sycl::float2half_rn(f))) {}
 #else
-#if XTD_HAS_STDFLOAT16
+#if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
         // standard C/C++ code
         : bits_(std::bit_cast<uint16_t>(static_cast<std::float16_t>(f))) {}
 #else
@@ -55,8 +55,13 @@ public:
 #endif
 #endif
 
+    template <typename T>
+        requires std::convertible_to<T, float> && (!std::same_as<std::decay_t<T>, float>) && (!std::same_as<std::decay_t<T>, float16>)
+    XTD_DEVICE_FUNCTION constexpr float16(T val) noexcept
+        : float16(static_cast<float>(val)) {}
+
     /* ========================================================================
-     * CONVERSION BACK TO FLOAT
+     * CONVERTOR
      * ===================================================================== */
     XTD_DEVICE_FUNCTION constexpr operator float() const noexcept {
 #if defined(XTD_TARGET_CUDA)
@@ -69,7 +74,7 @@ public:
         // SYCL device code
         return static_cast<float>(sycl::ushort2half_rn(bits_));
 #else
-#if XTD_HAS_STDFLOAT16
+#if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
         // standard C/C++ code
         return static_cast<float>(std::bit_cast<std::float16_t>(bits_));
 #else
@@ -80,7 +85,7 @@ public:
     }
 
     /* ========================================================================
-     * COMPATIBILITY CONSTRUCTOR TO FLOAT16
+     * COMPATIBILITY CONSTRUCTOR FROM VENDOR
      * ===================================================================== */
     // NON-EXPLICIT constructor allows implicit conversion from std::float16_t (_Float16)
 #if defined(XTD_TARGET_CUDA)
@@ -96,14 +101,19 @@ public:
     XTD_DEVICE_FUNCTION constexpr float16(sycl::half f) noexcept
         : bits_(sycl::half2ushort_rn(f)) {}
 #endif
-#if XTD_HAS_STDFLOAT16
-    // standard C/C++ code
+
+#if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
+    // C++23 standard float16_t
     XTD_DEVICE_FUNCTION constexpr float16(std::float16_t f) noexcept
-        : bits_(std::bit_cast<uint16_t>(f)) {}
+        : float16(static_cast<float>(f)) {}
+#elif defined(__FLT16_MANT_DIG__) && !defined(__NVCC__)
+    // Core C23 / GNU extension native _Float16
+    XTD_DEVICE_FUNCTION constexpr float16(_Float16 f) noexcept
+        : float16(static_cast<float>(f)) {}
 #endif
 
     /* ========================================================================
-     * COMPATIBILITY CONVERTER FROM FLOAT16
+     * COMPATIBILITY CONVERTER TO VENDOR
      * ===================================================================== */
 #if defined(XTD_TARGET_CUDA)
     // CUDA device code
@@ -121,7 +131,7 @@ public:
         return sycl::ushort2half_rn(bits_);
     }
 #endif
-#if XTD_HAS_STDFLOAT16
+#if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
     // standard C/C++ code
     XTD_DEVICE_FUNCTION constexpr operator std::float16_t() const noexcept {
         return std::bit_cast<std::float16_t>(bits_);
@@ -218,6 +228,31 @@ public:
         return to_ordered_int(bits_) <=> to_ordered_int(rhs.bits_);
     }
 #endif
+
+    /* ========================================================================
+     * BITWISE OPERATORS
+     * ===================================================================== */
+    XTD_DEVICE_FUNCTION constexpr float16 operator&(uint16_t mask) const noexcept {
+        float16 res;
+        res.bits_ = bits_ & mask;
+        return res;
+    }
+
+    XTD_DEVICE_FUNCTION constexpr float16& operator&=(uint16_t mask) noexcept {
+        bits_ &= mask;
+        return *this;
+    }
+
+    // XTD_DEVICE_FUNCTION constexpr float16 operator&(int mask) const noexcept {
+    //     float16 res;
+    //     res.bits_ = bits_ & static_cast<uint16_t>(mask);
+    //     return res;
+    // }
+    //
+    // XTD_DEVICE_FUNCTION constexpr float16& operator&=(int mask) noexcept {
+    //     bits_ &= static_cast<uint16_t>(mask);
+    //     return *this;
+    // }
 
     /* ========================================================================
      * UTILITIES

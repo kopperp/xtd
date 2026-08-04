@@ -28,10 +28,20 @@ namespace xtd {
     // SYCL device code
     return sycl::half_precision::cos(arg);
 #elif XTD_HAS_STDFLOAT16
-    return std::cos(std::bit_cast<std::float16_t>(arg));
+    if (std::is_constant_evaluated()) {
+      return static_cast<float16>(std::cos(static_cast<float>(arg)));
+    } else {
+#if defined(__clang__) && __has_builtin(__builtin_cosf16) && defined(__AVX512FP16__)
+      return __builtin_cosf16(std::bit_cast<std::float16_t>(arg));
+#elif defined(__clang__)
+      return __builtin_cosf(static_cast<float>(arg));
+#else
+      return std::cos(static_cast<float>(arg));
+#endif
+    }
 #else
     // standard C/C++ code
-    return float16(std::cos(static_cast<float_t>(arg)));
+    return ::cosf(arg);
 #endif
   }
 

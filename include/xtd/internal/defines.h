@@ -6,6 +6,10 @@
 
 #pragma once
 
+#if __cplusplus < 202002L
+#error "xtd requires C++20 or later. Please compile with -std=c++20."
+#endif
+
 // Catch accidental prior inclusion of <stdfloat> before defines.h
 #if defined(_GLIBCXX_STDFLOAT) || defined(_LIBCPP_STDFLOAT) || defined(_STDFLOAT_)
     #error "<stdfloat> was included before 'xtd/internal/defines.h'. Please include 'defines.h' first."
@@ -48,13 +52,14 @@
 #include <sycl/sycl.hpp>
 #endif
 
-#ifndef XTD_HAS_STDFLOAT16 // Remove this? Mainly for debugging
-#if __has_include(<stdfloat>) && defined(__STDCPP_FLOAT16_T__)
+#if defined(__STDCPP_FLOAT16_T__)
     #include <stdfloat>
+    #define XTD_HAS_STDFLOAT16 1
+#elif defined(__clang__) && defined(__FLT16_MAX__)
+    namespace std { using float16_t = _Float16; }
     #define XTD_HAS_STDFLOAT16 1
 #else
     #define XTD_HAS_STDFLOAT16 0
-#endif
 #endif
 
 // Prevent accidental downstream includes of <stdfloat>

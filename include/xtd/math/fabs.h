@@ -26,10 +26,10 @@ namespace xtd {
     return sycl::fabs(arg);
 #elif XTD_HAS_STDFLOAT16
     // standard C/C++ code
-    return ::fabsf(arg);
+    return ::fabs(std::bit_cast<std::float16_t>(arg));
 #else
     // standard C/C++ code
-    return float16(::fabs(static_cast<float_t>(arg)));
+    return arg & uint16_t{0x7FFF};
 #endif
   }
 

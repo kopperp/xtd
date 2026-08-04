@@ -17,4 +17,8 @@ namespace byval {
   T max(T a, T b) {
     return std::max(a, b);
   }
+
+  inline float16 max(float16 a, float16 b) {
+    return float16(std::max(static_cast<float>(a), static_cast<float>(b)));
+  }
 }  // namespace byval

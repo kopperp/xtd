@@ -17,4 +17,8 @@ namespace byval {
   T min(T a, T b) {
     return std::min(a, b);
   }
+
+  inline float16 min(float16 a, float16 b) {
+    return float16(std::min(static_cast<float>(a), static_cast<float>(b)));
+  }
 }  // namespace byval

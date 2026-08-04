@@ -23,7 +23,7 @@ TEST_CASE("xtd::clamp", "[clamp][cpu]") {
   const auto& device = test::cpu::device();
   DYNAMIC_SECTION("CPU: " << device.name()) {
     SECTION("float16 xtd::clamp(float16, float16)") {
-      validate_clamp<float16, float16, xtd::clamp, [](float16 x, float16 lo, float16 hi) -> float16 { return float16(std::clamp(static_cast<float>(x), static_cast<float>(lo), static_cast<float>(hi))); }>(device);
+      validate_clamp<float16, float16, xtd::clamp, byval::clamp>(device);
     }
 
     SECTION("float xtd::clamp(float, float)") {

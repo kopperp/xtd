@@ -17,6 +17,7 @@
 // test headers
 #include "common/cuda/platform.h"
 #include "common/cuda/validate.h"
+#include "byval_abs.h"
 
 TEST_CASE("xtd::abs", "[abs][cuda]") {
   const auto& platform = test::cuda::platform();
@@ -25,8 +26,9 @@ TEST_CASE("xtd::abs", "[abs][cuda]") {
       DYNAMIC_SECTION("CUDA device " << device.index() << ": " << device.name()) {
         SECTION("float16 xtd::abs(float16)") {
           // NVCC suffers from internal template mangling errors on stateless lambdas
-          constexpr auto float16_abs = +[](float16 x) -> float16 { return float16(std::abs(static_cast<float>(x))); };
-          validate<float16, float16, xtd::abs, float16_abs>(device);
+          // constexpr auto float16_abs = +[](float16 x) -> float16 { return float16(std::abs(static_cast<float>(x))); };
+          // validate<float16, float16, xtd::abs, float16_abs>(device);
+          validate<float16, float16, xtd::abs, byval::abs>(device);
         }
 
         SECTION("float xtd::abs(float)") {

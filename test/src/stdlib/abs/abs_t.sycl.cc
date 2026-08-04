@@ -18,6 +18,7 @@
 #include "common/sycl/device.h"
 #include "common/sycl/platform.h"
 #include "common/sycl/validate.h"
+#include "byval_abs.h"
 
 TEST_CASE("xtd::abs", "[abs][sycl]") {
   for (const auto &platform : test::sycl::platforms()) {
@@ -25,7 +26,7 @@ TEST_CASE("xtd::abs", "[abs][sycl]") {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
           SECTION("float16 xtd::abs(float16)") {
-            validate<float16, float16, xtd::abs, [](float16 x) { return float16(std::abs(static_cast<float>(x))); }>(platform, device);
+            validate<float16, float16, xtd::abs, byval::abs>(platform, device);
           }
 
           SECTION("float xtd::abs(float)") {

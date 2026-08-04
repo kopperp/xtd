@@ -14,11 +14,12 @@
 
 namespace byval {
   template <xtd::arithmetic T>
-  T clamp(T x, T lo, T hi) {
-    return std::clamp(x, lo, hi);
+  T abs(T x, T lo, T hi) {
+    return std::abs(x);
   }
 
-  inline float16 clamp(float16 x, float16 lo, float16 hi) {
-    return float16(std::clamp(static_cast<float>(x), static_cast<float>(lo), static_cast<float>(hi)));
+  inline float16 abs(float16 x) {
+    return float16(std::abs(static_cast<float>(x)));
   }
 }  // namespace byval
+

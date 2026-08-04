@@ -52,7 +52,7 @@
 #include <sycl/sycl.hpp>
 #endif
 
-#if defined(__STDCPP_FLOAT16_T__)
+#if defined(__STDCPP_FLOAT16_T__) && __has_include(<stdfloat>)
     #include <stdfloat>
     #define XTD_HAS_STDFLOAT16 1
 #elif defined(__clang__) && defined(__FLT16_MAX__)

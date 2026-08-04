@@ -11,7 +11,6 @@
 
 #include <cstdint>   // For uint16_t
 #include <bit>       // For std::bit_cast
-// #include <stdfloat>
 #include <ostream>
 
 #include "xtd/internal/defines.h"

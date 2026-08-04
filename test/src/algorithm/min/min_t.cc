@@ -23,7 +23,7 @@ TEST_CASE("xtd::min", "[min][cpu]") {
   const auto& device = test::cpu::device();
   DYNAMIC_SECTION("CPU: " << device.name()) {
     SECTION("float16 xtd::min(float16, float16)") {
-      validate<float16, float16, xtd::min, [](float16 a, float16 b) -> float16 { return float16(std::min(static_cast<float>(a), static_cast<float>(b))); }>(device);
+      validate<float16, float16, xtd::min, byval::min>(device);
     }
 
     SECTION("float xtd::min(float, float)") {

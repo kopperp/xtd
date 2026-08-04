@@ -17,6 +17,7 @@
 // test headers
 #include "common/hip/platform.h"
 #include "common/hip/validate.h"
+#include "byval_abs.h"
 
 TEST_CASE("xtd::abs", "[abs][hip]") {
   const auto& platform = test::hip::platform();
@@ -24,7 +25,7 @@ TEST_CASE("xtd::abs", "[abs][hip]") {
     for (const auto& device : platform.devices()) {
       DYNAMIC_SECTION("HIP device " << device.index() << ": " << device.name()) {
         SECTION("float16 xtd::abs(float16)") {
-          validate<float16, float16, xtd::abs, [](float16 x) { return float16(std::abs(static_cast<float>(x))); }>(device);
+          validate<float16, float16, xtd::abs, byval::abs>(device);
         }
 
         SECTION("float xtd::abs(float)") {

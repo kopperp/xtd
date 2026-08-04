@@ -26,7 +26,7 @@ TEST_CASE("xtd::max", "[max][sycl]") {
       for (const auto &device : platform.devices()) {
         DYNAMIC_SECTION("SYCL device " << platform.index() << '.' << device.index() << ": " << device.name()) {
           SECTION("float16 xtd::max(float16, float16)") {
-            validate<float16, float16, xtd::max, [](float16 a, float16 b) -> float16 { return float16(std::max(static_cast<float>(a), static_cast<float>(b))); }>(platform, device);
+            validate<float16, float16, xtd::max, byval::max>(platform, device);
           }
 
           SECTION("float xtd::max(float, float)") {

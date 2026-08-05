@@ -23,7 +23,7 @@ namespace xtd {
     return __float2half_rn(::acosf(__half2float(arg)));
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
-    return __float2half(sycl::acos(__half2float(arg)));
+    return sycl::acos(static_cast<sycl::half>(arg));
 #elif XTD_HAS_STDFLOAT16
     if (std::is_constant_evaluated()) {
       return static_cast<float16>(std::acos(static_cast<float>(arg)));

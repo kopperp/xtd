@@ -23,7 +23,7 @@ namespace xtd {
     return __float2half(::atanf(__half2float(arg)));
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
-    return sycl::half_precision::atan(arg);
+    return sycl::atan(static_cast<sycl::half>(arg));
 #elif XTD_HAS_STDFLOAT16
     if (std::is_constant_evaluated()) {
       return static_cast<float16>(std::atan(static_cast<float>(arg)));

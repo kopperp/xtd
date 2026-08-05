@@ -23,7 +23,7 @@ namespace xtd {
     return ::htrunc(arg);
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
-    return sycl::half_precision::trunc(arg);
+    return sycl::trunc(static_cast<sycl::half>(arg));
 #elif XTD_HAS_STDFLOAT16
     if (std::is_constant_evaluated()) {
       return static_cast<float16>(std::trunc(static_cast<float>(arg)));

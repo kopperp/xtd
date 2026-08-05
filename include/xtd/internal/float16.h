@@ -43,7 +43,7 @@ public:
         : bits_(__half_as_ushort(__float2half(f))) {}
 #elif defined(XTD_TARGET_SYCL)
         // SYCL device code
-        : bits_(sycl::half2ushort_rn(sycl::float2half_rn(f))) {}
+        : bits_(sycl::bit_cast<uint16_t>(static_cast<sycl::half>(f))) {}
 #else
 #if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
         // standard C/C++ code
@@ -71,7 +71,7 @@ public:
         return __half2float(__ushort_as_half(bits_));
 #elif defined(XTD_TARGET_SYCL)
         // SYCL device code
-        return static_cast<float>(sycl::ushort2half_rn(bits_));
+        return static_cast<float>(sycl::bit_cast<sycl::half>(bits_));
 #else
 #if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
         // standard C/C++ code
@@ -98,17 +98,17 @@ public:
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
     XTD_DEVICE_FUNCTION constexpr float16(sycl::half f) noexcept
-        : bits_(sycl::half2ushort_rn(f)) {}
+        : bits_(sycl::bit_cast<std::uint16_t>(f)) {}
 #endif
 
 #if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
     // C++23 standard float16_t
     XTD_DEVICE_FUNCTION constexpr float16(std::float16_t f) noexcept
-        : float16(static_cast<float>(f)) {}
+        : bits_(std::bit_cast<std::uint16_t>(f)) {}
 #elif defined(__FLT16_MANT_DIG__) && !defined(__NVCC__)
     // Core C23 / GNU extension native _Float16
     XTD_DEVICE_FUNCTION constexpr float16(_Float16 f) noexcept
-        : float16(static_cast<float>(f)) {}
+        : bits_(std::bit_cast<std::uint16_t>(f)) {}
 #endif
 
     /* ========================================================================
@@ -127,7 +127,7 @@ public:
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
     XTD_DEVICE_FUNCTION constexpr operator sycl::half() const noexcept {
-        return sycl::ushort2half_rn(bits_);
+        return sycl::bit_cast<sycl::half>(bits_);
     }
 #endif
 #if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16

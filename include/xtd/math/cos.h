@@ -26,7 +26,7 @@ namespace xtd {
     return float16(::cosf(static_cast<float>(arg)));
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
-    return sycl::half_precision::cos(arg);
+    return sycl::cos(static_cast<sycl::half>(arg));
 #elif XTD_HAS_STDFLOAT16
     if (std::is_constant_evaluated()) {
       return static_cast<float16>(std::cos(static_cast<float>(arg)));

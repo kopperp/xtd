@@ -23,7 +23,7 @@ namespace xtd {
     return __habs(arg);
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
-    return sycl::fabs(arg);
+    return sycl::fabs(static_cast<sycl::half>(arg));
 #elif XTD_HAS_STDFLOAT16
     // standard C/C++ code
     return ::fabs(std::bit_cast<std::float16_t>(arg));

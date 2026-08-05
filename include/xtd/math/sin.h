@@ -25,7 +25,7 @@ namespace xtd {
     return float16(::sinf(static_cast<float>(arg)));
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
-    return sycl::half_precision::sin(arg);
+    return sycl::sin(static_cast<sycl::half>(arg));
 #elif XTD_HAS_STDFLOAT16
     if (std::is_constant_evaluated()) {
       return static_cast<float16>(std::sin(static_cast<float>(arg)));

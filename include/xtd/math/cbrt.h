@@ -23,7 +23,7 @@ namespace xtd {
     return __float2half(::cbrtf(__half2float(arg)));
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
-    return sycl::half_precision::cbrt(arg);
+    return sycl::cbrt(static_cast<sycl::half>(arg));
 #elif XTD_HAS_STDFLOAT16
     return ::cbrt(std::bit_cast<std::float16_t>(arg));
 #else

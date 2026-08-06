@@ -10,6 +10,9 @@
 #include <cmath>
 
 #include "xtd/internal/defines.h"
+#if !defined(XTD_TARGET_CUDA) && !defined(XTD_TARGET_HIP) && !defined(XTD_TARGET_SYCL)
+#include "xtd/math/cos.inl"
+#endif
 
 namespace xtd {
 
@@ -27,6 +30,12 @@ namespace xtd {
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
     return sycl::cos(static_cast<sycl::half>(arg));
+#else
+    // standard C/C++ code
+    // Mask off the sign bit (bit 15) to evaluate |arg|
+    std::uint16_t abs_bits = std::bit_cast<std::uint16_t>(arg) & 0x7FFF;
+    return std::bit_cast<float16>(cosf16_lut[abs_bits]);
+/*
 #elif XTD_HAS_STDFLOAT16
     // standard C/C++ code
 #if defined(__clang__) && __has_builtin(__builtin_cosf16) && defined(__AVX512FP16__)
@@ -42,6 +51,7 @@ namespace xtd {
 #endif
 #else
     return std::cos(static_cast<float_t>(arg));
+*/
 #endif
   }
 

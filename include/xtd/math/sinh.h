@@ -10,10 +10,13 @@
 #include <cmath>
 
 #include "xtd/internal/defines.h"
+#if !defined(XTD_TARGET_CUDA) && !defined(XTD_TARGET_HIP) && !defined(XTD_TARGET_SYCL)
+#include "xtd/math/sinh.inl"
+#endif
 
 namespace xtd {
 
-  /* Computes the hyperbolic sine of arg, in single precision.
+  /* Computes the hyperbolic sine of arg, in half precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float16 sinh(float16 arg) {
 #if defined(XTD_TARGET_CUDA)
@@ -25,7 +28,16 @@ namespace xtd {
     return __float2half(::sinhf(__half2float(arg)));
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
-    return sycl::sinh(static_cast<float>(arg));
+    return sycl::sinh(static_cast<sycl::half>(arg));
+#else
+    // standard C/C++ code
+    // XOR the sign bit (bit 15) to evaluate -arg
+    std::uint16_t arg_bits = std::bit_cast<std::uint16_t>(arg);
+    std::uint16_t abs_bits = arg_bits & 0x7FFF;
+    std::uint16_t sign_bit = arg_bits & 0x8000;
+
+    return std::bit_cast<float16>(static_cast<std::uint16_t>(sinhf16_lut[abs_bits] ^ sign_bit));
+/*
 #elif XTD_HAS_STDFLOAT16
     // standard C/C++ code
 #if defined(__clang__) && __has_builtin(__builtin_sinhf16) && defined(__AVX512FP16__)
@@ -40,7 +52,8 @@ namespace xtd {
     return std::sinh(static_cast<float>(arg));
 #endif
 #else
-    return float16(std::sinh(static_cast<float_t>(arg)));
+    return std::sinh(static_cast<float_t>(arg));
+*/
 #endif
   }
 
@@ -55,7 +68,7 @@ namespace xtd {
     return ::sinhf(arg);
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
-    return sycl::sinh(arg);
+    return sycl::sinhf(arg);
 #else
     // standard C/C++ code
     return ::sinhf(arg);

@@ -10,6 +10,9 @@
 #include <cmath>
 
 #include "xtd/internal/defines.h"
+#if !defined(XTD_TARGET_CUDA) && !defined(XTD_TARGET_HIP) && !defined(XTD_TARGET_SYCL)
+#include "xtd/math/tan.inl"
+#endif
 
 namespace xtd {
   /* Computes the tangent of arg (measured in radians), in half precision.
@@ -24,8 +27,16 @@ namespace xtd {
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
     return sycl::half_precision::tan(arg);
-#elif XTD_HAS_STDFLOAT16
+#else
     // standard C/C++ code
+    // XOR the sign bit (bit 15) to evaluate -arg
+    std::uint16_t arg_bits = std::bit_cast<std::uint16_t>(arg);
+    std::uint16_t abs_bits = arg_bits & 0x7FFF;
+    std::uint16_t sign_bit = arg_bits & 0x8000;
+
+    return std::bit_cast<float16>(static_cast<std::uint16_t>(tanf16_lut[abs_bits] ^ sign_bit));
+/*
+#elif XTD_HAS_STDFLOAT16
 #if defined(__clang__) && __has_builtin(__builtin_tanf16) && defined(__AVX512FP16__)
     if (std::is_constant_evaluated()) {
       return std::tan(static_cast<float>(arg));
@@ -39,6 +50,7 @@ namespace xtd {
 #endif
 #else
     return std::tan(static_cast<float_t>(arg));
+*/
 #endif
   }
 

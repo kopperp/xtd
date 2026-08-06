@@ -10,6 +10,9 @@
 #include <cmath>
 
 #include "xtd/internal/defines.h"
+#if !defined(XTD_TARGET_CUDA) && !defined(XTD_TARGET_HIP) && !defined(XTD_TARGET_SYCL)
+#include "xtd/math/acos.inl"
+#endif
 
 namespace xtd {
 
@@ -25,8 +28,12 @@ namespace xtd {
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
     return sycl::acos(static_cast<sycl::half>(arg));
-#elif XTD_HAS_STDFLOAT16
+#else
     // standard C/C++ code
+    // acos cannot be reduced without violating 1-ULP precision
+    return std::bit_cast<float16>(acosf16_lut[std::bit_cast<std::uint16_t>(arg)]);
+/*
+#elif XTD_HAS_STDFLOAT16
 #if defined(__clang__) && __has_builtin(__builtin_acosf16) && defined(__AVX512FP16__)
     if (std::is_constant_evaluated()) {
       return std::acos(static_cast<float>(arg));
@@ -40,6 +47,7 @@ namespace xtd {
 #endif
 #else
     return std::acos(static_cast<float_t>(arg));
+*/
 #endif
   }
 

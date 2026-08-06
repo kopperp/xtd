@@ -10,6 +10,9 @@
 #include <cmath>
 
 #include "xtd/internal/defines.h"
+#if !defined(XTD_TARGET_CUDA) && !defined(XTD_TARGET_HIP) && !defined(XTD_TARGET_SYCL)
+#include "xtd/math/tanh.inl"
+#endif
 
 namespace xtd {
   /* Computes the hyperbolic tangent of arg, in half precision.
@@ -25,6 +28,15 @@ namespace xtd {
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
     return sycl::tanh(static_cast<sycl::half>(arg));
+#else
+    // standard C/C++ code
+    // XOR the sign bit (bit 15) to evaluate -arg
+    std::uint16_t arg_bits = std::bit_cast<std::uint16_t>(arg);
+    std::uint16_t abs_bits = arg_bits & 0x7FFF;
+    std::uint16_t sign_bit = arg_bits & 0x8000;
+
+    return std::bit_cast<float16>(static_cast<std::uint16_t>(tanhf16_lut[abs_bits] ^ sign_bit));
+/*
 #elif XTD_HAS_STDFLOAT16
     // standard C/C++ code
 #if defined(__clang__) && __has_builtin(__builtin_tanhf16) && defined(__AVX512FP16__)
@@ -40,6 +52,7 @@ namespace xtd {
 #endif
 #else
     return std::tanh(static_cast<float_t>(arg));
+*/
 #endif
   }
 

@@ -26,6 +26,11 @@
 class float16 {
 public:
     constexpr float16() noexcept = default;
+    constexpr float16(const float16&) noexcept = default;
+    constexpr float16(float16&&) noexcept = default;
+    constexpr float16& operator=(const float16&) noexcept = default;
+    constexpr float16& operator=(float16&&) noexcept = default;
+    ~float16() noexcept = default;
 
     // Accept raw bit data
     // XTD_DEVICE_FUNCTION explicit constexpr float16(uint16_t raw_bits) noexcept
@@ -34,7 +39,7 @@ public:
     /* ========================================================================
      * CONSTRUCTOR
      * ===================================================================== */
-    XTD_DEVICE_FUNCTION constexpr float16(float f) noexcept
+    XTD_DEVICE_FUNCTION constexpr inline float16(float f) noexcept
 #if defined(XTD_TARGET_CUDA)
         // CUDA device code
         : bits_(__half_as_ushort(__float2half(f))) {}
@@ -56,13 +61,13 @@ public:
 
     template <typename T>
         requires std::convertible_to<T, float> && (!std::same_as<std::decay_t<T>, float>) && (!std::same_as<std::decay_t<T>, float16>)
-    XTD_DEVICE_FUNCTION constexpr float16(T val) noexcept
+    XTD_DEVICE_FUNCTION constexpr inline float16(T val) noexcept
         : float16(static_cast<float>(val)) {}
 
     /* ========================================================================
      * CONVERTOR
      * ===================================================================== */
-    XTD_DEVICE_FUNCTION constexpr operator float() const noexcept {
+    XTD_DEVICE_FUNCTION constexpr inline operator float() const noexcept {
 #if defined(XTD_TARGET_CUDA)
         // CUDA device code
         return __half2float(__ushort_as_half(bits_));
@@ -89,25 +94,25 @@ public:
     // NON-EXPLICIT constructor allows implicit conversion from std::float16_t (_Float16)
 #if defined(XTD_TARGET_CUDA)
     // CUDA device code
-    XTD_DEVICE_FUNCTION constexpr float16(__half f) noexcept
+    XTD_DEVICE_FUNCTION constexpr inline float16(__half f) noexcept
         : bits_(__half_as_ushort(f)) {}
 #elif defined(XTD_TARGET_HIP)
     // HIP/ROCm device code
-    XTD_DEVICE_FUNCTION constexpr float16(__half f) noexcept
+    XTD_DEVICE_FUNCTION constexpr inline float16(__half f) noexcept
         : bits_(__half_as_ushort(f)) {}
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
-    XTD_DEVICE_FUNCTION constexpr float16(sycl::half f) noexcept
+    XTD_DEVICE_FUNCTION constexpr inline float16(sycl::half f) noexcept
         : bits_(sycl::bit_cast<std::uint16_t>(f)) {}
 #endif
 
 #if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
     // C++23 standard float16_t
-    XTD_DEVICE_FUNCTION constexpr float16(std::float16_t f) noexcept
+    XTD_DEVICE_FUNCTION constexpr inline float16(std::float16_t f) noexcept
         : bits_(std::bit_cast<std::uint16_t>(f)) {}
 #elif defined(__FLT16_MANT_DIG__) && !defined(__NVCC__)
     // Core C23 / GNU extension native _Float16
-    XTD_DEVICE_FUNCTION constexpr float16(_Float16 f) noexcept
+    XTD_DEVICE_FUNCTION constexpr inline float16(_Float16 f) noexcept
         : bits_(std::bit_cast<std::uint16_t>(f)) {}
 #endif
 
@@ -116,23 +121,23 @@ public:
      * ===================================================================== */
 #if defined(XTD_TARGET_CUDA)
     // CUDA device code
-    XTD_DEVICE_FUNCTION constexpr operator __half() const noexcept {
+    XTD_DEVICE_FUNCTION constexpr inline operator __half() const noexcept {
         return __ushort_as_half(bits_);
     }
 #elif defined(XTD_TARGET_HIP)
     // HIP/ROCm device code
-    XTD_DEVICE_FUNCTION constexpr operator __half() const noexcept {
+    XTD_DEVICE_FUNCTION constexpr inline operator __half() const noexcept {
         return __ushort_as_half(bits_);
     }
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
-    XTD_DEVICE_FUNCTION constexpr operator sycl::half() const noexcept {
+    XTD_DEVICE_FUNCTION constexpr inline operator sycl::half() const noexcept {
         return sycl::bit_cast<sycl::half>(bits_);
     }
 #endif
 #if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
     // standard C/C++ code
-    XTD_DEVICE_FUNCTION constexpr operator std::float16_t() const noexcept {
+    XTD_DEVICE_FUNCTION constexpr inline operator std::float16_t() const noexcept {
         return std::bit_cast<std::float16_t>(bits_);
     }
 #endif
@@ -140,33 +145,84 @@ public:
     /* ========================================================================
      * UNARY OPERATORS
      * ===================================================================== */
-    XTD_DEVICE_FUNCTION constexpr float16 operator+() const noexcept { return *this; }
-    XTD_DEVICE_FUNCTION constexpr float16 operator-() const noexcept {
+    XTD_DEVICE_FUNCTION constexpr inline float16 operator+() const noexcept { return *this; }
+    XTD_DEVICE_FUNCTION constexpr inline float16 operator-() const noexcept {
         float16 res = *this;
         res.bits_ ^= 0x8000;
         return res;
     }
 
-    /* ========================================================================
+/* ========================================================================
      * ARITHMETIC OPERATORS
      * ===================================================================== */
-    XTD_DEVICE_FUNCTION constexpr float16 operator+(float16 rhs) const noexcept {
+    XTD_DEVICE_FUNCTION constexpr inline float16 operator+(float16 rhs) const noexcept {
+#if defined(XTD_TARGET_CUDA)
+        return __hadd(static_cast<__half>(*this), static_cast<__half>(rhs));
+#elif defined(XTD_TARGET_HIP)
+        return __hadd(static_cast<__half>(*this), static_cast<__half>(rhs));
+#elif defined(XTD_TARGET_SYCL)
+        return static_cast<sycl::half>(*this) + static_cast<sycl::half>(rhs);
+#else
+#if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
+        return float16(static_cast<std::float16_t>(*this) + static_cast<std::float16_t>(rhs));
+#else
         return float16(static_cast<float>(*this) + static_cast<float>(rhs));
-    }
-    XTD_DEVICE_FUNCTION constexpr float16 operator-(float16 rhs) const noexcept {
-        return float16(static_cast<float>(*this) - static_cast<float>(rhs));
-    }
-    XTD_DEVICE_FUNCTION constexpr float16 operator*(float16 rhs) const noexcept {
-        return float16(static_cast<float>(*this) * static_cast<float>(rhs));
-    }
-    XTD_DEVICE_FUNCTION constexpr float16 operator/(float16 rhs) const noexcept {
-        return float16(static_cast<float>(*this) / static_cast<float>(rhs));
+#endif
+#endif
     }
 
-    XTD_DEVICE_FUNCTION constexpr float16& operator+=(float16 rhs) noexcept { *this = *this + rhs; return *this; }
-    XTD_DEVICE_FUNCTION constexpr float16& operator-=(float16 rhs) noexcept { *this = *this - rhs; return *this; }
-    XTD_DEVICE_FUNCTION constexpr float16& operator*=(float16 rhs) noexcept { *this = *this * rhs; return *this; }
-    XTD_DEVICE_FUNCTION constexpr float16& operator/=(float16 rhs) noexcept { *this = *this / rhs; return *this; }
+    XTD_DEVICE_FUNCTION constexpr inline float16 operator-(float16 rhs) const noexcept {
+#if defined(XTD_TARGET_CUDA)
+        return __hsub(static_cast<__half>(*this), static_cast<__half>(rhs));
+#elif defined(XTD_TARGET_HIP)
+        return __hsub(static_cast<__half>(*this), static_cast<__half>(rhs));
+#elif defined(XTD_TARGET_SYCL)
+        return static_cast<sycl::half>(*this) - static_cast<sycl::half>(rhs);
+#else
+#if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
+        return float16(static_cast<std::float16_t>(*this) - static_cast<std::float16_t>(rhs));
+#else
+        return float16(static_cast<float>(*this) - static_cast<float>(rhs));
+#endif
+#endif
+    }
+
+    XTD_DEVICE_FUNCTION constexpr inline float16 operator*(float16 rhs) const noexcept {
+#if defined(XTD_TARGET_CUDA)
+        return __hmul(static_cast<__half>(*this), static_cast<__half>(rhs));
+#elif defined(XTD_TARGET_HIP)
+        return __hmul(static_cast<__half>(*this), static_cast<__half>(rhs));
+#elif defined(XTD_TARGET_SYCL)
+        return static_cast<sycl::half>(*this) * static_cast<sycl::half>(rhs);
+#else
+#if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
+        return float16(static_cast<std::float16_t>(*this) * static_cast<std::float16_t>(rhs));
+#else
+        return float16(static_cast<float>(*this) * static_cast<float>(rhs));
+#endif
+#endif
+    }
+
+    XTD_DEVICE_FUNCTION constexpr inline float16 operator/(float16 rhs) const noexcept {
+#if defined(XTD_TARGET_CUDA)
+        return __hdiv(static_cast<__half>(*this), static_cast<__half>(rhs));
+#elif defined(XTD_TARGET_HIP)
+        return __hdiv(static_cast<__half>(*this), static_cast<__half>(rhs));
+#elif defined(XTD_TARGET_SYCL)
+        return static_cast<sycl::half>(*this) / static_cast<sycl::half>(rhs);
+#else
+#if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
+        return float16(static_cast<std::float16_t>(*this) / static_cast<std::float16_t>(rhs));
+#else
+        return float16(static_cast<float>(*this) / static_cast<float>(rhs));
+#endif
+#endif
+    }
+
+    XTD_DEVICE_FUNCTION constexpr inline float16& operator+=(float16 rhs) noexcept { *this = *this + rhs; return *this; }
+    XTD_DEVICE_FUNCTION constexpr inline float16& operator-=(float16 rhs) noexcept { *this = *this - rhs; return *this; }
+    XTD_DEVICE_FUNCTION constexpr inline float16& operator*=(float16 rhs) noexcept { *this = *this * rhs; return *this; }
+    XTD_DEVICE_FUNCTION constexpr inline float16& operator/=(float16 rhs) noexcept { *this = *this / rhs; return *this; }
 
     /* ========================================================================
      * TEMPLATED ARITHMETIC OPERATORS
@@ -174,46 +230,47 @@ public:
     template <typename L, typename R>
     requires (std::is_same_v<L, float16> && std::is_arithmetic_v<R>) ||
              (std::is_arithmetic_v<L> && std::is_same_v<R, float16>)
-    XTD_DEVICE_FUNCTION friend constexpr float operator+(L lhs, R rhs) noexcept {
+    XTD_DEVICE_FUNCTION friend constexpr inline float operator+(L lhs, R rhs) noexcept {
+        printf("here\n");
         return static_cast<float>(lhs) + static_cast<float>(rhs);
     }
 
     template <typename L, typename R>
     requires (std::is_same_v<L, float16> && std::is_arithmetic_v<R>) ||
              (std::is_arithmetic_v<L> && std::is_same_v<R, float16>)
-    XTD_DEVICE_FUNCTION friend constexpr float operator*(L lhs, R rhs) noexcept {
+    XTD_DEVICE_FUNCTION friend constexpr inline float operator*(L lhs, R rhs) noexcept {
         return static_cast<float>(lhs) * static_cast<float>(rhs);
     }
 
     template <typename L, typename R>
     requires (std::is_same_v<L, float16> && std::is_arithmetic_v<R>) ||
              (std::is_arithmetic_v<L> && std::is_same_v<R, float16>)
-    XTD_DEVICE_FUNCTION friend constexpr float operator-(L lhs, R rhs) noexcept {
+    XTD_DEVICE_FUNCTION friend constexpr inline float operator-(L lhs, R rhs) noexcept {
         return static_cast<float>(lhs) - static_cast<float>(rhs);
     }
 
     template <typename L, typename R>
     requires (std::is_same_v<L, float16> && std::is_arithmetic_v<R>) ||
              (std::is_arithmetic_v<L> && std::is_same_v<R, float16>)
-    XTD_DEVICE_FUNCTION friend constexpr float operator/(L lhs, R rhs) noexcept {
+    XTD_DEVICE_FUNCTION friend constexpr inline float operator/(L lhs, R rhs) noexcept {
         return static_cast<float>(lhs) / static_cast<float>(rhs);
     }
 
     /* ========================================================================
      * COMPARISON OPERATORS
      * ===================================================================== */
-    XTD_DEVICE_FUNCTION constexpr bool operator==(const float16& rhs) const noexcept {
+    XTD_DEVICE_FUNCTION constexpr inline bool operator==(const float16& rhs) const noexcept {
         if (std::isnan(static_cast<float>(*this)) || std::isnan(static_cast<float>(rhs))) {
             return false;
         }
         return to_ordered_int(bits_) == to_ordered_int(rhs.bits_);
     }
 #if defined(XTD_TARGET_CUDA) || defined(XTD_TARGET_HIP) || defined(XTD_TARGET_SYCL)
-    XTD_DEVICE_FUNCTION constexpr bool operator!=(const float16& rhs) const noexcept { return !(*this == rhs); }
-    XTD_DEVICE_FUNCTION constexpr bool operator>(const float16& rhs) const noexcept { return rhs < *this; }
-    XTD_DEVICE_FUNCTION constexpr bool operator<=(const float16& rhs) const noexcept { return !(rhs < *this); }
-    XTD_DEVICE_FUNCTION constexpr bool operator>=(const float16& rhs) const noexcept { return !(*this < rhs); }
-    XTD_DEVICE_FUNCTION constexpr bool operator<(const float16& rhs) const noexcept {
+    XTD_DEVICE_FUNCTION constexpr inline bool operator!=(const float16& rhs) const noexcept { return !(*this == rhs); }
+    XTD_DEVICE_FUNCTION constexpr inline bool operator>(const float16& rhs) const noexcept { return rhs < *this; }
+    XTD_DEVICE_FUNCTION constexpr inline bool operator<=(const float16& rhs) const noexcept { return !(rhs < *this); }
+    XTD_DEVICE_FUNCTION constexpr inline bool operator>=(const float16& rhs) const noexcept { return !(*this < rhs); }
+    XTD_DEVICE_FUNCTION constexpr inline bool operator<(const float16& rhs) const noexcept {
         if (std::isnan(static_cast<float>(*this)) || std::isnan(static_cast<float>(rhs))) {
             return false;
         }
@@ -231,13 +288,13 @@ public:
     /* ========================================================================
      * BITWISE OPERATORS
      * ===================================================================== */
-    XTD_DEVICE_FUNCTION constexpr float16 operator&(uint16_t mask) const noexcept {
+    XTD_DEVICE_FUNCTION constexpr inline float16 operator&(uint16_t mask) const noexcept {
         float16 res;
         res.bits_ = bits_ & mask;
         return res;
     }
 
-    XTD_DEVICE_FUNCTION constexpr float16& operator&=(uint16_t mask) noexcept {
+    XTD_DEVICE_FUNCTION constexpr inline float16& operator&=(uint16_t mask) noexcept {
         bits_ &= mask;
         return *this;
     }
@@ -266,7 +323,7 @@ private:
     // uint16_t bits_{0};
     uint16_t bits_;
 
-    XTD_DEVICE_FUNCTION constexpr static std::int16_t to_ordered_int(std::uint16_t u) noexcept {
+    XTD_DEVICE_FUNCTION constexpr static inline std::int16_t to_ordered_int(std::uint16_t u) noexcept {
         u = (u == 0x8000) ? 0 : u;  // Handling signed zero
         return (u & 0x8000) ? static_cast<std::int16_t>(0x8000 - u) : static_cast<std::int16_t>(u);  // Converting sign-magnitude to two's complement
     }
@@ -279,6 +336,8 @@ private:
      */
     XTD_DEVICE_FUNCTION constexpr inline static std::uint16_t float_to_half( const std::uint32_t f ) noexcept
     {
+        static_assert(sizeof(float) == sizeof(uint32_t));
+
         const std::uint32_t one = ( 0x00000001 );
         const std::uint32_t f_s_mask = ( 0x80000000 );
         const std::uint32_t f_e_mask = ( 0x7f800000 );

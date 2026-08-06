@@ -13,7 +13,12 @@
 #include "xtd/concepts/arithmetic.h"
 
 namespace byval {
-  template <xtd::arithmetic T>
+  /* The concept arithmetic<T> is satisfied if and only if T is an integral type or a floating point type.
+   */
+  template <class T>
+  concept arithmetic = std::integral<T> or std::floating_point<T>;
+
+  template <arithmetic T>
   T abs(T x, T lo, T hi) {
     return std::abs(x);
   }

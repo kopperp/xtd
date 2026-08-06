@@ -26,20 +26,24 @@ namespace xtd {
     // SYCL device code
     return sycl::sinh(arg);
 #elif XTD_HAS_STDFLOAT16
-    if (std::is_constant_evaluated()) {
-      return static_cast<float16>(std::sinh(static_cast<float>(arg)));
-    } else {
+    // standard C/C++ code
 #if defined(__clang__) && __has_builtin(__builtin_sinhf16) && defined(__AVX512FP16__)
-      return __builtin_sinhf16(std::bit_cast<std::float16_t>(arg));
-#elif defined(__clang__)
-      return __builtin_sinhf(static_cast<float>(arg));
-#else
+    if (std::is_constant_evaluated()) {
       return std::sinh(static_cast<float>(arg));
-#endif
+    } else {
+      return __builtin_sinhf16(std::bit_cast<std::float16_t>(arg));
+    }
+#elif __has_builtin(__builtin_sinhf)
+    if (std::is_constant_evaluated()) {
+      return std::sinh(static_cast<float>(arg));
+    } else {
+      return __builtin_sinhf(static_cast<float>(arg));
     }
 #else
-    // standard C/C++ code
-    return ::sinhf(arg);
+    return std::sinh(static_cast<float>(arg));
+#endif
+#else
+    return float16(std::sinh(static_cast<float_t>(arg)));
 #endif
   }
 

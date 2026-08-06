@@ -12,6 +12,7 @@
 #include "xtd/internal/defines.h"
 
 namespace xtd {
+
   /* Computes the largest integral value that is not greater than arg, in half precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float16 floor(float16 arg) {
@@ -25,19 +26,23 @@ namespace xtd {
     // SYCL device code
     return sycl::floor(static_cast<sycl::half>(arg));
 #elif XTD_HAS_STDFLOAT16
-    if (std::is_constant_evaluated()) {
-      return static_cast<float16>(std::floor(static_cast<float>(arg)));
-    } else {
+    // standard C/C++ code
 #if defined(__clang__) && __has_builtin(__builtin_floorf16) && defined(__AVX512FP16__)
-      return __builtin_floorf16(std::bit_cast<std::float16_t>(arg));
-#elif defined(__clang__)
-      return __builtin_floorf(static_cast<float>(arg));
-#else
+    if (std::is_constant_evaluated()) {
       return std::floor(static_cast<float>(arg));
-#endif
+    } else {
+      return __builtin_floorf16(std::bit_cast<std::float16_t>(arg));
+    }
+#elif __has_builtin(__builtin_floorf)
+    if (std::is_constant_evaluated()) {
+      return std::floor(static_cast<float>(arg));
+    } else {
+      return __builtin_floorf(static_cast<float>(arg));
     }
 #else
-    // standard C/C++ code
+    return std::floor(static_cast<float>(arg));
+#endif
+#else
     return float16(std::floor(static_cast<float_t>(arg)));
 #endif
   }

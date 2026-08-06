@@ -12,6 +12,7 @@
 #include "xtd/internal/defines.h"
 
 namespace xtd {
+
   /* Computes the absolute value of arg, in half precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float16 fabs(float16 arg) {

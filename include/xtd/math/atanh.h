@@ -12,6 +12,7 @@
 #include "xtd/internal/defines.h"
 
 namespace xtd {
+
   /* Computes the inverse hyperbolic tanget of arg, in half precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float16 atanh(float16 arg) {
@@ -25,19 +26,23 @@ namespace xtd {
     // SYCL device code
     return sycl::atanh(static_cast<sycl::half>(arg));
 #elif XTD_HAS_STDFLOAT16
-    if (std::is_constant_evaluated()) {
-      return static_cast<float16>(std::atanh(static_cast<float>(arg)));
-    } else {
+    // standard C/C++ code
 #if defined(__clang__) && __has_builtin(__builtin_atanhf16) && defined(__AVX512FP16__)
-      return __builtin_atanhf16(std::bit_cast<std::float16_t>(arg));
-#elif defined(__clang__)
-      return __builtin_atanhf(static_cast<float>(arg));
-#else
+    if (std::is_constant_evaluated()) {
       return std::atanh(static_cast<float>(arg));
-#endif
+    } else {
+      return __builtin_atanhf16(std::bit_cast<std::float16_t>(arg));
+    }
+#elif __has_builtin(__builtin_atanhf)
+    if (std::is_constant_evaluated()) {
+      return std::atanh(static_cast<float>(arg));
+    } else {
+      return __builtin_atanhf(static_cast<float>(arg));
     }
 #else
-    // standard C/C++ code
+    return std::atanh(static_cast<float>(arg));
+#endif
+#else
     return float16(std::atanh(static_cast<float_t>(arg)));
 #endif
   }

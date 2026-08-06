@@ -28,7 +28,6 @@
 #define __FLT16_HAS_DENORM__ 1
 #define __FLT16_MANT_DIG__ 11
 #define __FLT16_DIG__ 3
-#endif
 
 // Default values.  Should be overridden in configuration files if necessary.
 #ifndef __glibcxx_float16_has_denorm_loss
@@ -105,3 +104,5 @@ namespace std {
 #undef __glibcxx_float16_has_denorm_loss
 #undef __glibcxx_float16_traps
 #undef __glibcxx_float16_tinyness_before
+
+#endif

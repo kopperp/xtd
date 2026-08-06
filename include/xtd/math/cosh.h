@@ -13,6 +13,42 @@
 
 namespace xtd {
 
+  /* Computes the hyperbolic cosine of arg, in half precision.
+   */
+  XTD_DEVICE_FUNCTION inline constexpr float16 cosh(float16 arg) {
+#if defined(XTD_TARGET_CUDA)
+    // CUDA device code
+    return float16(::coshf(static_cast<float>(arg)));
+#elif defined(XTD_TARGET_HIP)
+    // HIP/ROCm device code
+    // return ::hcosh(arg);
+    // AMD uses a suboptimal range reduction, use full float evaluation
+    return float16(::coshf(static_cast<float>(arg)));
+#elif defined(XTD_TARGET_SYCL)
+    // SYCL device code
+    return sycl::cosh(static_cast<sycl::half>(arg));
+#elif XTD_HAS_STDFLOAT16
+    // standard C/C++ code
+#if defined(__clang__) && __has_builtin(__builtin_coshf16) && defined(__AVX512FP16__)
+    if (std::is_constant_evaluated()) {
+      return std::cosh(static_cast<float>(arg));
+    } else {
+      return __builtin_coshf16(std::bit_cast<std::float16_t>(arg));
+    }
+#elif __has_builtin(__builtin_coshf)
+    if (std::is_constant_evaluated()) {
+      return std::cosh(static_cast<float>(arg));
+    } else {
+      return __builtin_coshf(static_cast<float>(arg));
+    }
+#else
+    return std::cosh(static_cast<float>(arg));
+#endif
+#else
+    return float16(std::cosh(static_cast<float_t>(arg)));
+#endif
+  }
+
   /* Computes the hyperbolic cosine of arg, in single precision.
    */
   XTD_DEVICE_FUNCTION inline constexpr float cosh(float arg) {
@@ -25,18 +61,6 @@ namespace xtd {
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
     return sycl::cosh(arg);
-#elif XTD_HAS_STDFLOAT16
-    if (std::is_constant_evaluated()) {
-      return static_cast<float16>(std::cosh(static_cast<float>(arg)));
-    } else {
-#if defined(__clang__) && __has_builtin(__builtin_coshf16) && defined(__AVX512FP16__)
-      return __builtin_coshf16(std::bit_cast<std::float16_t>(arg));
-#elif defined(__clang__)
-      return __builtin_coshf(static_cast<float>(arg));
-#else
-      return std::cosh(static_cast<float>(arg));
-#endif
-    }
 #else
     // standard C/C++ code
     return ::coshf(arg);

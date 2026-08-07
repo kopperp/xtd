@@ -21,7 +21,7 @@ namespace xtd {
 #elif defined(XTD_TARGET_HIP)
     // HIP/ROCm device code
     // HIP is missing this specific function
-    return float16(::tanh(static_cast<float_t>(arg)));
+    return __float2half(::tanhf(__half2float(arg)));
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
     return sycl::tanh(static_cast<sycl::half>(arg));

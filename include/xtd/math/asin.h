@@ -21,9 +21,7 @@ namespace xtd {
     return __float2half(::asinf(__half2float(arg)));
 #elif defined(XTD_TARGET_HIP)
     // HIP/ROCm device code
-    // return ::hasin(arg);
-    // AMD uses a suboptimal range reduction, use full float evaluation
-    return ::asinf(static_cast<float>(arg));
+    return __float2half(::asinf(__half2float(arg)));
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
     return sycl::asin(static_cast<sycl::half>(arg));

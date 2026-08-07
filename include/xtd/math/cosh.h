@@ -18,12 +18,10 @@ namespace xtd {
   XTD_DEVICE_FUNCTION inline constexpr float16 cosh(float16 arg) {
 #if defined(XTD_TARGET_CUDA)
     // CUDA device code
-    return ::coshf(static_cast<float>(arg));
+    return __float2half(::coshf(__half2float(arg)));
 #elif defined(XTD_TARGET_HIP)
     // HIP/ROCm device code
-    // return ::hcosh(arg);
-    // AMD uses a suboptimal range reduction, use full float evaluation
-    return ::coshf(static_cast<float>(arg));
+    return __float2half(::coshf(__half2float(arg)));
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
     return sycl::cosh(static_cast<sycl::half>(arg));

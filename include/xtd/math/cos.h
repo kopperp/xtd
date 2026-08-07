@@ -23,7 +23,7 @@ namespace xtd {
     // HIP/ROCm device code
     // return ::hcos(arg);
     // AMD uses a suboptimal range reduction, use full float evaluation
-    return ::cosf(static_cast<float>(arg));
+    return __float2half(::cosf(__half2float(arg)));
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
     return sycl::cos(static_cast<sycl::half>(arg));

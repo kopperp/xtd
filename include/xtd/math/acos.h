@@ -21,7 +21,7 @@ namespace xtd {
     return __float2half(::acosf(__half2float(arg)));
 #elif defined(XTD_TARGET_HIP)
     // HIP/ROCm device code
-    return __float2half_rn(::acosf(__half2float(arg)));
+    return __float2half(::acosf(__half2float(arg)));
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
     return sycl::acos(static_cast<sycl::half>(arg));

@@ -164,9 +164,9 @@ public:
         return static_cast<sycl::half>(*this) + static_cast<sycl::half>(rhs);
 #else
 #if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
-        return float16(static_cast<std::float16_t>(*this) + static_cast<std::float16_t>(rhs));
+        return static_cast<std::float16_t>(*this) + static_cast<std::float16_t>(rhs);
 #else
-        return float16(static_cast<float>(*this) + static_cast<float>(rhs));
+        return static_cast<float>(*this) + static_cast<float>(rhs);
 #endif
 #endif
     }
@@ -180,9 +180,9 @@ public:
         return static_cast<sycl::half>(*this) - static_cast<sycl::half>(rhs);
 #else
 #if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
-        return float16(static_cast<std::float16_t>(*this) - static_cast<std::float16_t>(rhs));
+        return static_cast<std::float16_t>(*this) - static_cast<std::float16_t>(rhs);
 #else
-        return float16(static_cast<float>(*this) - static_cast<float>(rhs));
+        return static_cast<float>(*this) - static_cast<float>(rhs);
 #endif
 #endif
     }
@@ -196,9 +196,9 @@ public:
         return static_cast<sycl::half>(*this) * static_cast<sycl::half>(rhs);
 #else
 #if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
-        return float16(static_cast<std::float16_t>(*this) * static_cast<std::float16_t>(rhs));
+        return static_cast<std::float16_t>(*this) * static_cast<std::float16_t>(rhs);
 #else
-        return float16(static_cast<float>(*this) * static_cast<float>(rhs));
+        return static_cast<float>(*this) * static_cast<float>(rhs);
 #endif
 #endif
     }
@@ -212,9 +212,9 @@ public:
         return static_cast<sycl::half>(*this) / static_cast<sycl::half>(rhs);
 #else
 #if defined(__STDCPP_FLOAT16_T__) || XTD_HAS_STDFLOAT16
-        return float16(static_cast<std::float16_t>(*this) / static_cast<std::float16_t>(rhs));
+        return static_cast<std::float16_t>(*this) / static_cast<std::float16_t>(rhs);
 #else
-        return float16(static_cast<float>(*this) / static_cast<float>(rhs));
+        return static_cast<float>(*this) / static_cast<float>(rhs);
 #endif
 #endif
     }
@@ -231,7 +231,6 @@ public:
     requires (std::is_same_v<L, float16> && std::is_arithmetic_v<R>) ||
              (std::is_arithmetic_v<L> && std::is_same_v<R, float16>)
     XTD_DEVICE_FUNCTION friend constexpr inline float operator+(L lhs, R rhs) noexcept {
-        printf("here\n");
         return static_cast<float>(lhs) + static_cast<float>(rhs);
     }
 
@@ -325,7 +324,8 @@ private:
 
     XTD_DEVICE_FUNCTION constexpr static inline std::int16_t to_ordered_int(std::uint16_t u) noexcept {
         u = (u == 0x8000) ? 0 : u;  // Handling signed zero
-        return (u & 0x8000) ? static_cast<std::int16_t>(0x8000 - u) : static_cast<std::int16_t>(u);  // Converting sign-magnitude to two's complement
+        return (0x8000 & u) ? static_cast<std::int16_t>(0x8000 - u)
+                            : static_cast<std::int16_t>(u);  // Converting sign-magnitude to two's complement
     }
 
     /* Copyright <2020> <Feng Wang>
@@ -338,23 +338,23 @@ private:
     {
         static_assert(sizeof(float) == sizeof(uint32_t));
 
-        const std::uint32_t one = ( 0x00000001 );
-        const std::uint32_t f_s_mask = ( 0x80000000 );
-        const std::uint32_t f_e_mask = ( 0x7f800000 );
-        const std::uint32_t f_m_mask = ( 0x007fffff );
-        const std::uint32_t f_m_hidden_bit = ( 0x00800000 );
-        const std::uint32_t f_m_round_bit = ( 0x00001000 );
-        const std::uint32_t f_snan_mask = ( 0x7fc00000 );
-        const std::uint32_t f_e_pos = ( 0x00000017 );
-        const std::uint32_t h_e_pos = ( 0x0000000a );
-        const std::uint32_t h_e_mask = ( 0x00007c00 );
-        const std::uint32_t h_snan_mask = ( 0x00007e00 );
-        const std::uint32_t h_e_mask_value = ( 0x0000001f );
-        const std::uint32_t f_h_s_pos_offset = ( 0x00000010 );
-        const std::uint32_t f_h_bias_offset = ( 0x00000070 );
-        const std::uint32_t f_h_m_pos_offset = ( 0x0000000d );
-        const std::uint32_t h_nan_min = ( 0x00007c01 );
-        const std::uint32_t f_h_e_biased_flag = ( 0x0000008f );
+        const std::uint32_t one = 0x00000001 ;
+        const std::uint32_t f_s_mask = 0x80000000;
+        const std::uint32_t f_e_mask = 0x7f800000;
+        const std::uint32_t f_m_mask = 0x007fffff;
+        const std::uint32_t f_m_hidden_bit = 0x00800000;
+        const std::uint32_t f_m_round_bit = 0x00001000;
+        const std::uint32_t f_snan_mask = 0x7fc00000;
+        const std::uint32_t f_e_pos = 0x00000017;
+        const std::uint32_t h_e_pos = 0x0000000a;
+        const std::uint32_t h_e_mask = 0x00007c00;
+        const std::uint32_t h_snan_mask = 0x00007e00;
+        const std::uint32_t h_e_mask_value = 0x0000001f;
+        const std::uint32_t f_h_s_pos_offset = 0x00000010;
+        const std::uint32_t f_h_bias_offset = 0x00000070;
+        const std::uint32_t f_h_m_pos_offset = 0x0000000d;
+        const std::uint32_t h_nan_min = 0x00007c01;
+        const std::uint32_t f_h_e_biased_flag = 0x0000008f;
         const std::uint32_t f_s = ( f & f_s_mask );
         const std::uint32_t f_e = ( f & f_e_mask );
         const std::uint16_t h_s = ( f_s >> f_h_s_pos_offset );
@@ -396,23 +396,23 @@ private:
         const std::uint32_t h_em_denorm_result = _uint32_sels( is_h_denorm_msb, h_m_denorm, h_em_inf_result );
         const std::uint32_t h_em_snan_result = _uint32_sels( is_f_snan_msb, h_snan_mask, h_em_denorm_result );
         const std::uint32_t h_result = ( h_s | h_em_snan_result );
-        return ( std::uint16_t )( h_result );
+        return static_cast< std::uint16_t>(h_result);
     }
 
     XTD_DEVICE_FUNCTION constexpr inline static std::uint32_t half_to_float( const std::uint16_t h ) noexcept
     {
-        const std::uint32_t h_e_mask = ( 0x00007c00 );
-        const std::uint32_t h_m_mask = ( 0x000003ff );
-        const std::uint32_t h_s_mask = ( 0x00008000 );
-        const std::uint32_t h_f_s_pos_offset = ( 0x00000010 );
-        const std::uint32_t h_f_e_pos_offset = ( 0x0000000d );
-        const std::uint32_t h_f_bias_offset = ( 0x0001c000 );
-        const std::uint32_t f_e_mask = ( 0x7f800000 );
-        const std::uint32_t f_m_mask = ( 0x007fffff );
-        const std::uint32_t h_f_e_denorm_bias = ( 0x0000007e );
-        const std::uint32_t h_f_m_denorm_sa_bias = ( 0x00000008 );
-        const std::uint32_t f_e_pos = ( 0x00000017 );
-        const std::uint32_t h_e_mask_minus_one = ( 0x00007bff );
+        const std::uint32_t h_e_mask = 0x00007c00;
+        const std::uint32_t h_m_mask = 0x000003ff;
+        const std::uint32_t h_s_mask = 0x00008000;
+        const std::uint32_t h_f_s_pos_offset = 0x00000010;
+        const std::uint32_t h_f_e_pos_offset = 0x0000000d;
+        const std::uint32_t h_f_bias_offset = 0x0001c000;
+        const std::uint32_t f_e_mask = 0x7f800000;
+        const std::uint32_t f_m_mask = 0x007fffff;
+        const std::uint32_t h_f_e_denorm_bias = 0x0000007e;
+        const std::uint32_t h_f_m_denorm_sa_bias = 0x00000008;
+        const std::uint32_t f_e_pos = 0x00000017;
+        const std::uint32_t h_e_mask_minus_one = 0x00007bff;
         const std::uint32_t h_e = ( h & h_e_mask );
         const std::uint32_t h_m = ( h & h_m_mask );
         const std::uint32_t h_s = ( h & h_s_mask );
@@ -436,32 +436,32 @@ private:
         const std::uint32_t is_inf_msb = ( is_e_flagged_msb & ~is_m_nez_msb );
         const std::uint32_t is_denorm_msb = ( is_m_nez_msb & is_e_eqz_msb );
         const std::uint32_t is_nan_msb = ( is_e_flagged_msb & is_m_nez_msb );
-        const std::uint32_t is_zero = ( ( ( std::int32_t )is_zero_msb ) >> 31 );
+        const std::uint32_t is_zero = ( ( static_cast< std::int32_t>(is_zero_msb) ) >> 31 );
         const std::uint32_t f_zero_result = ( f_em & ~is_zero );
         const std::uint32_t f_denorm_result = _uint32_sels( is_denorm_msb, f_em_denorm, f_zero_result );
         const std::uint32_t f_inf_result = _uint32_sels( is_inf_msb, f_e_mask, f_denorm_result );
         const std::uint32_t f_nan_result = _uint32_sels( is_nan_msb, f_em_nan, f_inf_result );
         const std::uint32_t f_result = ( f_s | f_nan_result );
-        return ( f_result );
+        return f_result;
     }
 
     XTD_DEVICE_FUNCTION constexpr inline static std::uint32_t _uint32_sels( std::uint32_t test, std::uint32_t a, std::uint32_t b ) noexcept
         {
-            const std::uint32_t mask = ( ( ( std::int32_t )test ) >> 31 );
+            const std::uint32_t mask = ( ( static_cast< std::int32_t>(test) ) >> 31 );
             const std::uint32_t sel_a = ( a & mask );
             const std::uint32_t sel_b = ( b & ~mask );
             const std::uint32_t result = ( sel_a | sel_b );
-            return ( result );
+            return result;
         }
 
     XTD_DEVICE_FUNCTION constexpr inline static std::uint32_t _uint32_cntlz( std::uint32_t x ) noexcept
         {
 #ifdef __GNUC__
-            if ( x == 0 ) return 0x00000020;
+            if ( x == 0 ) { return 0x00000020; }
             std::uint32_t is_x_nez_msb = ( -x );
             std::uint32_t nlz = __builtin_clz( x );
             std::uint32_t result = _uint32_sels( is_x_nez_msb, nlz, 0x00000020 );
-            return ( result );
+            return result;
 #else
             if ( x == 0 ) return 0x00000020;
             const std::uint32_t x0 = ( x >> 1 );
@@ -490,7 +490,7 @@ private:
             const std::uint32_t x17 = ( x16 >> 16 );
             const std::uint32_t x18 = ( x16 + x17 );
             const std::uint32_t x19 = ( x18 & 0x0000003f );
-            return ( x19 );
+            return x19;
 #endif // NOT __GNUC__
         }
 };

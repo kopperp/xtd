@@ -29,20 +29,16 @@ namespace xtd {
 #if defined(__clang__) && __has_builtin(__builtin_truncf16) && defined(__AVX512FP16__)
     if (std::is_constant_evaluated()) {
       return std::trunc(static_cast<float>(arg));
-    } else {
-      return __builtin_truncf16(std::bit_cast<std::float16_t>(arg));
-    }
+    } return __builtin_truncf16(std::bit_cast<std::float16_t>(arg));
 #elif __has_builtin(__builtin_truncf)
     if (std::is_constant_evaluated()) {
       return std::trunc(static_cast<float>(arg));
-    } else {
-      return __builtin_truncf(static_cast<float>(arg));
-    }
+    } return __builtin_truncf(static_cast<float>(arg));
 #else
     return std::trunc(static_cast<float>(arg));
 #endif
 #else
-    return float16(std::trunc(static_cast<float_t>(arg)));
+    return std::trunc(static_cast<float_t>(arg));
 #endif
   }
 

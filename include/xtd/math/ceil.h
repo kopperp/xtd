@@ -30,20 +30,16 @@ namespace xtd {
 #if defined(__clang__) && __has_builtin(__builtin_ceilf16) && defined(__AVX512FP16__)
     if (std::is_constant_evaluated()) {
       return std::ceil(static_cast<float>(arg));
-    } else {
-      return __builtin_ceilf16(std::bit_cast<std::float16_t>(arg));
-    }
+    } return __builtin_ceilf16(std::bit_cast<std::float16_t>(arg));
 #elif __has_builtin(__builtin_ceilf)
     if (std::is_constant_evaluated()) {
       return std::ceil(static_cast<float>(arg));
-    } else {
-      return __builtin_ceilf(static_cast<float>(arg));
-    }
+    } return __builtin_ceilf(static_cast<float>(arg));
 #else
     return std::ceil(static_cast<float>(arg));
 #endif
 #else
-    return float16(std::ceil(static_cast<float_t>(arg)));
+    return std::ceil(static_cast<float_t>(arg));
 #endif
   }
 

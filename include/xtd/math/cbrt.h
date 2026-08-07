@@ -30,20 +30,16 @@ namespace xtd {
 #if defined(__clang__) && __has_builtin(__builtin_cbrtf16) && defined(__AVX512FP16__)
     if (std::is_constant_evaluated()) {
       return std::cbrt(static_cast<float>(arg));
-    } else {
-      return __builtin_cbrtf16(std::bit_cast<std::float16_t>(arg));
-    }
+    } return __builtin_cbrtf16(std::bit_cast<std::float16_t>(arg));
 #elif __has_builtin(__builtin_cbrtf)
     if (std::is_constant_evaluated()) {
       return std::cbrt(static_cast<float>(arg));
-    } else {
-      return __builtin_cbrtf(static_cast<float>(arg));
-    }
+    } return __builtin_cbrtf(static_cast<float>(arg));
 #else
     return std::cbrt(static_cast<float>(arg));
 #endif
 #else
-    return float16(std::cbrt(static_cast<float_t>(arg)));
+    return std::cbrt(static_cast<float_t>(arg));
 #endif
   }
 

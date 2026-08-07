@@ -30,20 +30,16 @@ namespace xtd {
 #if defined(__clang__) && __has_builtin(__builtin_tanhf16) && defined(__AVX512FP16__)
     if (std::is_constant_evaluated()) {
       return std::tanh(static_cast<float>(arg));
-    } else {
-      return __builtin_tanhf16(std::bit_cast<std::float16_t>(arg));
-    }
+    } return __builtin_tanhf16(std::bit_cast<std::float16_t>(arg));
 #elif __has_builtin(__builtin_tanhf)
     if (std::is_constant_evaluated()) {
       return std::tanh(static_cast<float>(arg));
-    } else {
-      return __builtin_tanhf(static_cast<float>(arg));
-    }
+    } return __builtin_tanhf(static_cast<float>(arg));
 #else
     return std::tanh(static_cast<float>(arg));
 #endif
 #else
-    return float16(std::tanh(static_cast<float_t>(arg)));
+    return std::tanh(static_cast<float_t>(arg));
 #endif
   }
 

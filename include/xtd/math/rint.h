@@ -29,20 +29,16 @@ namespace xtd {
 #if defined(__clang__) && __has_builtin(__builtin_rintf16) && defined(__AVX512FP16__)
     if (std::is_constant_evaluated()) {
       return std::rint(static_cast<float>(arg));
-    } else {
-      return __builtin_rintf16(std::bit_cast<std::float16_t>(arg));
-    }
+    } return __builtin_rintf16(std::bit_cast<std::float16_t>(arg));
 #elif __has_builtin(__builtin_rintf)
     if (std::is_constant_evaluated()) {
       return std::rint(static_cast<float>(arg));
-    } else {
-      return __builtin_rintf(static_cast<float>(arg));
-    }
+    } return __builtin_rintf(static_cast<float>(arg));
 #else
     return std::rint(static_cast<float>(arg));
 #endif
 #else
-    return float16(std::rint(static_cast<float_t>(arg)));
+    return std::rint(static_cast<float_t>(arg));
 #endif
   }
 

@@ -23,7 +23,7 @@ namespace xtd {
     // HIP/ROCm device code
     // return ::hasin(arg);
     // AMD uses a suboptimal range reduction, use full float evaluation
-    return float16(::asinf(static_cast<float>(arg)));
+    return ::asinf(static_cast<float>(arg));
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
     return sycl::asin(static_cast<sycl::half>(arg));
@@ -32,20 +32,16 @@ namespace xtd {
 #if defined(__clang__) && __has_builtin(__builtin_asinf16) && defined(__AVX512FP16__)
     if (std::is_constant_evaluated()) {
       return std::asin(static_cast<float>(arg));
-    } else {
-      return __builtin_asinf16(std::bit_cast<std::float16_t>(arg));
-    }
+    } return __builtin_asinf16(std::bit_cast<std::float16_t>(arg));
 #elif __has_builtin(__builtin_asinf)
     if (std::is_constant_evaluated()) {
       return std::asin(static_cast<float>(arg));
-    } else {
-      return __builtin_asinf(static_cast<float>(arg));
-    }
+    } return __builtin_asinf(static_cast<float>(arg));
 #else
     return std::asin(static_cast<float>(arg));
 #endif
 #else
-    return float16(std::asin(static_cast<float_t>(arg)));
+    return std::asin(static_cast<float_t>(arg));
 #endif
   }
 

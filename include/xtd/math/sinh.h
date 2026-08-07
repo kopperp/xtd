@@ -15,6 +15,38 @@ namespace xtd {
 
   /* Computes the hyperbolic sine of arg, in single precision.
    */
+  XTD_DEVICE_FUNCTION inline constexpr float16 sinh(float16 arg) {
+#if defined(XTD_TARGET_CUDA)
+    // CUDA device code
+    return ::sinhf(static_cast<float>(arg));
+#elif defined(XTD_TARGET_HIP)
+    // HIP/ROCm device code
+    // return ::hcosh(arg);
+    // AMD uses a suboptimal range reduction, use full float evaluation
+    return ::sinhf(static_cast<float>(arg));
+#elif defined(XTD_TARGET_SYCL)
+    // SYCL device code
+    return sycl::sinh(static_cast<float>(arg));
+#elif XTD_HAS_STDFLOAT16
+    // standard C/C++ code
+#if defined(__clang__) && __has_builtin(__builtin_sinhf16) && defined(__AVX512FP16__)
+    if (std::is_constant_evaluated()) {
+      return std::sinh(static_cast<float>(arg));
+    } return __builtin_sinhf16(std::bit_cast<std::float16_t>(arg));
+#elif __has_builtin(__builtin_sinhf)
+    if (std::is_constant_evaluated()) {
+      return std::sinh(static_cast<float>(arg));
+    } return __builtin_sinhf(static_cast<float>(arg));
+#else
+    return std::sinh(static_cast<float>(arg));
+#endif
+#else
+    return float16(std::sinh(static_cast<float_t>(arg)));
+#endif
+  }
+
+  /* Computes the hyperbolic sine of arg, in double precision.
+   */
   XTD_DEVICE_FUNCTION inline constexpr float sinh(float arg) {
 #if defined(XTD_TARGET_CUDA)
     // CUDA device code
@@ -25,25 +57,9 @@ namespace xtd {
 #elif defined(XTD_TARGET_SYCL)
     // SYCL device code
     return sycl::sinh(arg);
-#elif XTD_HAS_STDFLOAT16
+#else
     // standard C/C++ code
-#if defined(__clang__) && __has_builtin(__builtin_sinhf16) && defined(__AVX512FP16__)
-    if (std::is_constant_evaluated()) {
-      return std::sinh(static_cast<float>(arg));
-    } else {
-      return __builtin_sinhf16(std::bit_cast<std::float16_t>(arg));
-    }
-#elif __has_builtin(__builtin_sinhf)
-    if (std::is_constant_evaluated()) {
-      return std::sinh(static_cast<float>(arg));
-    } else {
-      return __builtin_sinhf(static_cast<float>(arg));
-    }
-#else
-    return std::sinh(static_cast<float>(arg));
-#endif
-#else
-    return float16(std::sinh(static_cast<float_t>(arg)));
+    return ::sinhf(arg);
 #endif
   }
 
